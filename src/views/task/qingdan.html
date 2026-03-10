@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deliverables Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1400px;
+        }
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem 0;
+        }
+        .logo {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-delay-unfinished {
+            background-color: #dc3545;
+        }
+        .status-completed {
+            background-color: #28a745;
+        }
+        .status-unfinished {
+            background-color: #007bff;
+        }
+        .status-delay-completed {
+            background-color: #e83e8c;
+        }
+        .chart-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+        .chart-container h5 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .filter-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0.75rem;
+        }
+        .filter-section .mb-4 {
+            margin-bottom: 0.75rem !important;
+        }
+        .filter-section .mb-2 {
+            margin-bottom: 0.5rem !important;
+        }
+        .filter-section .form-control,
+        .filter-section .form-select {
+            height: 28px;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+        .filter-section .form-label {
+            margin-bottom: 0.2rem;
+            font-size: 0.8rem;
+        }
+        .table-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.2rem;
+            margin-top: 1.2rem;
+        }
+        .table-responsive {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+        .table-responsive thead {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 1;
+        }
+        .table-container h5 {
+            font-size: 1rem;
+        }
+        .table-container table {
+            font-size: 0.8rem;
+            table-layout: fixed;
+            width: 100%;
+        }
+        .table-container th,
+        .table-container td {
+            padding: 0.4rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .resizable {
+            position: relative;
+        }
+        .resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            background-color: transparent;
+            z-index: 10;
+        }
+        .resizer:hover {
+            background-color: #007bff;
+        }
+        .resizing {
+            background-color: #007bff !important;
+        }
+        .progress-ring {
+            position: relative;
+            width: 150px;
+            height: 150px;
+        }
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        .progress-ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .date-range {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .date-range input {
+            width: 120px;
+        }
+        .date-range-slider {
+            flex: 1;
+            margin: 0 10px;
+        }
+        .discipline-filter {
+            margin-top: 1rem;
+        }
+        .discipline-checkboxes {
+            max-height: 150px;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-2">
+
+
+        <div class="row">
+            <!-- Left Sidebar - Filters -->
+            <div class="col-md-3">
+                <div class="filter-section">
+                    <!-- Date Range -->
+                    <div class="mb-4">
+                        <div class="mb-2">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start-date" value="2025-01-01">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end-date" value="2028-12-31">
+                        </div>
+                    </div>
+
+                    <!-- Discipline Filter -->
+                    <div class="discipline-filter">
+                        <div class="mb-2">
+                            <label class="form-label">Specialty</label>
+                            <select class="form-select" id="specialty">
+                                <option value="all">All</option>
+                                <option value="energy-catenary">Energy-Catenary</option>
+                                <option value="signaling-control">Signaling and Control</option>
+                                <option value="information-systems">Information Systems (Telecom)</option>
+                                <option value="multidisciplinare">Multidisciplinare (Simulation)</option>
+                                <option value="interface">Interface</option>
+                                <option value="energy-hv-mv-traction">Energy-HV/MV-Traction -SCE</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Design Phase</label>
+                            <select class="form-select" id="design-phase">
+                                <option value="all">All</option>
+                                <option value="single-line-basic">单线基本设计</option>
+                                <option value="double-line-basic">双线基本设计</option>
+                                <option value="execution-section3">执行设计-区段3</option>
+                                <option value="execution-section1-2">执行设计-区段1、2</option>
+                                <option value="nabs">NABS</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Completion Status</label>
+                            <select class="form-select" id="completion-status">
+                                <option value="all">All</option>
+                                <option value="delay-unfinished">Delay Unfinished</option>
+                                <option value="completed">Completed</option>
+                                <option value="unfinished">Unfinished</option>
+                                <option value="delay-completed">Delay Completed</option>
+                            </select>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <!-- Summary and Charts -->
+                <div class="chart-container mb-2">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-4">
+                                <h5>Total inputs deliverables: <span class="text-primary" id="total-deliverables">286</span></h5>
+                                <div class="status-legend mt-2">
+                                    <span class="me-3"><span class="status-indicator status-delay-unfinished"></span> Delay Unfinished</span>
+                                    <span class="me-3"><span class="status-indicator status-completed"></span> Completed</span>
+                                    <span class="me-3"><span class="status-indicator status-unfinished"></span> Unfinished</span>
+                                    <span><span class="status-indicator status-delay-completed"></span> Delay Completed</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-end">
+                                <div class="progress-ring" style="width: 150px; height: 120px; margin-top: -20px;">
+                                    <svg width="150" height="120">
+                                        <path d="M10,90 A65,65 0 0,1 140,90" stroke="#e0e0e0" stroke-width="12" fill="transparent"/>
+                                        <path d="M10,90 A65,65 0 0,1 140,90" stroke="#28a745" stroke-width="12" fill="transparent" stroke-dasharray="204.1" stroke-dashoffset="34.7"/>
+                                    </svg>
+                                    <div class="progress-ring-text" style="font-size: 1.5rem;">83.22%</div>
+                                    <div style="position: relative; top: -30px; margin-top: 5px;">
+                                        <div class="row">
+                                            <div class="col-6" style="text-align: left; padding-left: 10px;">0.00%</div>
+                                            <div class="col-6" style="text-align: right; padding-right: 10px;">100.00%</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <canvas id="deliverablesChart" height="193"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Deliverables Table - Full Width -->
+        <div class="row" style="position: relative; top: -5px;">
+            <div class="col-md-12">
+                <div class="table-container">
+                    <h5>Deliverables List</h5>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-striped" id="deliverables-table">
+                            <thead>
+                                <tr>
+                                    <th class="resizable">List Number<span class="resizer"></span></th>
+                                    <th class="resizable" style="width: 400px;">Content<span class="resizer"></span></th>
+                                    <th class="resizable">Specialty<span class="resizer"></span></th>
+                                    <th class="resizable">Design Phase<span class="resizer"></span></th>
+                                    <th class="resizable">Required Completion Time<span class="resizer"></span></th>
+                                    <th class="resizable">Actual Completion Time<span class="resizer"></span></th>
+                                    <th class="resizable">Completion Status<span class="resizer"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td>Architecture (basic design) - Barra Funda Station & Auxiliary Substation</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/11/18</td>
+                                    <td>2025/11/7</td>
+                                    <td><span class="status-indicator status-delivered"></span> Delivered</td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>Architecture (basic design) - Auxiliary Substation - FA Station</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/10/10</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-under-discussion"></span> Under Discussion</td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>Architecture (basic design) - Auxiliary Substation (Follow Along Substation) - Cachoeiras Station</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/10/10</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-under-discussion"></span> Under Discussion</td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>Architecture (basic design) - Auxiliary Substation - Franco da Rocha Station</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/10/10</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-under-discussion"></span> Under Discussion</td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Architecture (basic design) - Auxiliary Substation (Follow Along Substation) - Francisco Morato Station</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/10/15</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-under-discussion"></span> Under Discussion</td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>Architecture (basic design) - Auxiliary Substation - FA Station</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/10/10</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-in-progress"></span> In Progress</td>
+                                </tr>
+                                <tr>
+                                    <td>7</td>
+                                    <td>Technical Room Architecture & MRS interface (basic design) - Botujuru Station & auxiliary Substation (except technical room)</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/6/29</td>
+                                    <td>2025/6/29</td>
+                                    <td><span class="status-indicator status-delivered"></span> Delivered</td>
+                                </tr>
+                                <tr>
+                                    <td>8</td>
+                                    <td>Architecture (basic design) - FAS (Follow Along Substation) - Campo Limpo Paulista Station (Except technical room)</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2025/5/4</td>
+                                    <td>2025/5/4</td>
+                                    <td><span class="status-indicator status-delivered"></span> Delivered</td>
+                                </tr>
+                                <tr>
+                                    <td>9</td>
+                                    <td>Technical Room Architecture & MRS interface (basic design) - FAS (Follow Along Substation) - Campo Limpo</td>
+                                    <td>Architecture</td>
+                                    <td>Basic Design</td>
+                                    <td>2026/5/18</td>
+                                    <td>2026/3/6</td>
+                                    <td><span class="status-indicator status-under-discussion"></span> Under Discussion</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Deliverables chart
+            const ctx = document.getElementById('deliverablesChart').getContext('2d');
+            
+            // Define data for different disciplines
+            const disciplineData = {
+                all: {
+                    labels: ['Energy-Catenary', 'Signaling and Control', 'Information Systems (Telecom)', 'Multidisciplinare (Simulation)', 'Interface', 'Energy-HV/MV-Traction -SCE'],
+                    datasets: [
+                        {
+                            label: 'Delay Unfinished',
+                            data: [4, 0, 0, 0, 0, 0],
+                            backgroundColor: '#dc3545',
+                            stack: 'Stack 0'
+                        },
+                        {
+                            label: 'Delay Completed',
+                            data: [14, 0, 0, 29, 0, 0],
+                            backgroundColor: '#e83e8c',
+                            stack: 'Stack 0'
+                        },
+                        {
+                            label: 'Unfinished',
+                            data: [12, 0, 0, 0, 0, 0],
+                            backgroundColor: '#007bff',
+                            stack: 'Stack 0'
+                        },
+                        {
+                            label: 'Completed',
+                            data: [25, 27, 32, 0, 0, 0],
+                            backgroundColor: '#28a745',
+                            stack: 'Stack 0'
+                        }
+                    ]
+                }
+            };
+            
+            // Register datalabels plugin
+            Chart.register(ChartDataLabels);
+            
+            // Create chart
+            const deliverablesChart = new Chart(ctx, {
+                type: 'bar',
+                data: disciplineData.all,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        datalabels: {
+                            color: 'white',
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: function(value) {
+                                return value > 0 ? value : '';
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: {
+                                font: {
+                                    size: 10
+                                },
+                                maxRotation: 0,
+                                autoSkip: false,
+                                callback: function(value, index, values) {
+                                    // Get the actual label text
+                                    const label = this.getLabelForValue(value);
+                                    
+                                    // Split long labels into multiple lines
+                                    if (label.length > 15) {
+                                        const words = label.split(' ');
+                                        const lines = [];
+                                        let currentLine = words[0];
+                                        
+                                        for (let i = 1; i < words.length; i++) {
+                                            if (currentLine.length + words[i].length + 1 <= 15) {
+                                                currentLine += ' ' + words[i];
+                                            } else {
+                                                lines.push(currentLine);
+                                                currentLine = words[i];
+                                            }
+                                        }
+                                        lines.push(currentLine);
+                                        return lines;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Documents'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Deliverables data
+            const deliverablesData = [
+                {wbs: 'TIC-0001', name: 'Assumption containing the layout with the planned location of the substations within the geometric design – Section I', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/8/19', baseline: '2025/08/20', percentage: '100%'},
+                {wbs: 'TIC-0002', name: 'Assumption containing the layout with the planned location of the substations within the geometric design - Section II', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/8/19', baseline: '2025/08/21', percentage: '100%'},
+                {wbs: 'TIC-0003', name: 'Definition of the equipment model', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '', baseline: '2025/08/22', percentage: '0%'},
+                {wbs: 'TIC-0004', name: 'Geometric Design with indication of significant points (Turnouts, Curves, Superelevation, boundary of the land) – basic design - Trecho III', responsible: 'epc-civil', status: 'delay-completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/20', baseline: '2025/05/06', percentage: '0%'},
+                {wbs: 'TIC-0005', name: 'Geometric Design with indication of significant points (Turnouts, Curves, Superelevation, boundary of the land) – basic design - Trecho II', responsible: 'epc-civil', status: 'delay-completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/20', baseline: '2025/05/06', percentage: '0%'},
+                {wbs: 'TIC-0006', name: 'Geometric Design with indication of significant points (Turnouts, Curves, Superelevation, boundary of the land) – basic design - Trecho I', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/05/06', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0007', name: 'Terrain cross-sections with infrastructure (indicating drainage, duct banks, soil conditions) – basic design', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/05/06', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0008', name: 'Soil resistivity tests (for grounding design)', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/05/06', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0009', name: 'Track Technical Information (distance between tracks, rail head height, track superelevation, rail type, drainage, duct banks, interferences with other general systems/utilities, etc.) – Section III', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/05/06', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0010', name: 'Track Technical Information - report (distance between tracks, rail head height, track superelevation, rail type, drainage, duct banks, interferences with other general systems/utilities, etc.) – Section II', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/5/4', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0011', name: 'Track Technical Information - report (distance between tracks, rail head height, track superelevation, rail type, drainage, duct banks, interferences with other general systems/utilities, etc.) – Section I', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0012', name: 'RENAMED INPUT: definitions of electrified depots tracks.', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0013', name: 'Topographic Survey (Existing overhead contact line structures, bridges and walkways, crossing with high voltage lines)', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0014', name: 'Single-line track diagram (complementary data to the geometric plan/track plan) – Section III', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0015', name: 'Single-line track diagram (complementary data to the geometric plan/track plan) – Section II', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2026/3/2', baseline: '2026/3/4', percentage: '100%'},
+                {wbs: 'TIC-0016', name: 'Single-line track diagram (complementary data to the geometric plan/track plan) – Section I', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/20', baseline: '2025/08/20', percentage: '100%'},
+                {wbs: 'TIC-0017', name: 'Pantograph Specification (usable working area)', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/20', baseline: '2025/08/20', percentage: '100%'},
+                {wbs: 'TIC-0018', name: 'Dynamic Envelope Section III (TIM and TIC) – Horizontal and Vertical . For MRS, the technical specification is required', responsible: 'epc-civil', status: 'delay-completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/09/10', baseline: '2025/08/20', percentage: '0%'},
+                {wbs: 'TIC-0019', name: 'BIM design of suppliers’ parts and components', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/14', baseline: '2025/8/20', percentage: '100%'},
+                {wbs: 'TIC-0020', name: '2D design of suppliers’ parts and components', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/14', baseline: '2025/8/20', percentage: '100%'},
+                {wbs: 'TIC-0021', name: 'Specification of suppliers’ materials', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/06/15', baseline: '2025/8/20', percentage: '100%'},
+                {wbs: 'TIC-0022', name: 'Dynamic Envelope Section II (TIC and L7) – Horizontal and Vertical . For MRS, the technical specification is required', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/09/10', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0023', name: 'Dynamic Envelope Section I (TIC and L7) – Horizontal and Vertical For MRS, the technical specification is required', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-catenary', finish: '2025/08/20', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0024', name: 'Definition of medium voltage poles (drawings, detailed plans, specifications)', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0025', name: 'Guidelines for the preparation of the migration plans', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0026', name: 'Studies – short-circuit and selectivity analysis, insulation coordination.', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0027', name: 'Technical specification of high voltage, medium voltage and traction equipment', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0028', name: 'Proposal for replacement of the 13.8kV system with the 34.5kV', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0029', name: 'TAG - Proposal for equipment and cable identification and manufacturer\'s responsibility assignment', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0030', name: 'SCE Descriptive Memorial Approved', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0031', name: 'CPTM Nomenclature', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0032', name: 'SCE Network Architecture for Line 7', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/02/18', baseline: '2025/02/18', percentage: '100%'},
+                {wbs: 'TIC-0033', name: 'Submission of CPTM standards regarding the Traction Power System', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/02/10', baseline: '2025/02/18', percentage: '100%'},
+                {wbs: 'TIC-0034', name: 'Track layout of TIC and TIM (containing KM of stations, depots, crossings, tracks, and substations consolidated and unifilar configuration of the tracks) - Geométrico da Via - Section III', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'energy-hv-mv-traction', finish: '2025/07/18', baseline: '2025/07/18', percentage: '100%'},
+                {wbs: 'TIC-0035', name: 'Sistema de transmissão de dados terra trem (para transmitir informações como onboard CFTV, contagem de passeiros, painéis de informações, informações por voz...) Ground-to-train data transmission system (to transmit information such as onboard CCTV, passenger counting, information displays, voice announcements, etc.)', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'information-systems', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0036', name: 'Descriptive Memorial of SCADA hardware equipment - Approved FOR SCADA', responsible: 'epc-civil', status: 'completed', designPhase: 'nabs', specialty: 'information-systems', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0037', name: 'OCC Telecom Network Diagram - Approved FOR SCADA', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'information-systems', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0038', name: 'Equipment Layout and Infrastructure of OCC - Approved FOR SCADA/TELECOM', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'information-systems', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0039', name: 'TETRA Frequency Relations', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'information-systems', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0040', name: 'TETRA Radio Propagation Study', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'nabs', specialty: 'information-systems', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0041', name: 'Technical Specification - TETRA', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'single-line-basic', specialty: 'information-systems', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0042', name: 'Technical Specification - SCA', responsible: 'epc-civil', status: 'delay-unfinished', designPhase: 'nabs', specialty: 'information-systems', finish: '', baseline: '2026/2/15', percentage: '0%'},
+                {wbs: 'TIC-0043', name: 'Sistema de transmissão de dados terra trem (para transmitir informações como onboard CFTV, contagem de passeiros, painéis de informações, informações por voz...) Ground-to-train data transmission system (to transmit information such as onboard CCTV, passenger counting, information displays, voice announcements, etc.)', responsible: 'epc-civil', status: 'completed', designPhase: 'double-line-basic', specialty: 'information-systems', finish: '2025/02/18', baseline: '2025/02/18', percentage: '100%'},
+                {wbs: 'TIC-0044', name: 'DCI Template Approved', responsible: 'epc-civil', status: 'completed', designPhase: 'double-line-basic', specialty: 'interface', finish: '2025/02/10', baseline: '2025/02/18', percentage: '100%'},
+                {wbs: 'TIC-0045', name: 'Interface Matrix Approved', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'interface', finish: '2025/07/18', baseline: '2025/07/18', percentage: '100%'},
+                {wbs: 'TIC-0046', name: 'Interface Management Plan Approved', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'interface', finish: '2025/05/06', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0047', name: 'Approved Hazard List', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'interface', finish: '2025/5/4', baseline: '2025/05/06', percentage: '100%'},
+                {wbs: 'TIC-0048', name: 'Studies – power flow AC – HV/MV', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'multidisciplinare', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0049', name: 'Signaling Operational Simulation (Headway)', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'multidisciplinare', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0050', name: 'Short-circuit – traction', responsible: 'epc-civil', status: 'unfinished', designPhase: 'single-line-basic', specialty: 'multidisciplinare', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0051', name: 'Simulation of traction DC (power flow)', responsible: 'epc-civil', status: 'unfinished', designPhase: 'double-line-basic', specialty: 'multidisciplinare', finish: '', baseline: '2026/3/18', percentage: '50%'},
+                {wbs: 'TIC-0052', name: 'UPDATED INPUT: Security team room Architecture (OCC) - basic project', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'signaling-control', finish: '2026/3/2', baseline: '2026/3/4', percentage: '100%'},
+                {wbs: 'TIC-0053', name: 'Definition of the OCC location', responsible: 'epc-civil', status: 'completed', designPhase: 'single-line-basic', specialty: 'signaling-control', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'},
+                {wbs: 'TIC-0054', name: 'Modifications TIC Line (BFU-JUN) tracks and stations, indicating “current” to “revised” and Schedule details for implementation of each sector and details on AMV, position sensors, key machines, locks and protections', responsible: 'epc-civil', status: 'completed', designPhase: 'double-line-basic', specialty: 'signaling-control', finish: '2025/9/2', baseline: '2025/9/10', percentage: '100%'}
+            ];
+            
+            // Function to update progress ring based on completed count from chart data
+            function updateProgressRing() {
+                // Get current chart data
+                const currentData = deliverablesChart.data;
+                
+                // Calculate total count of all statuses
+                let totalCount = 0;
+                let completedCount = 0;
+                
+                currentData.datasets.forEach(dataset => {
+                    dataset.data.forEach(value => {
+                        totalCount += value;
+                    });
+                    
+                    // Check if this dataset is for Completed status
+                    if (dataset.label === 'Completed') {
+                        dataset.data.forEach(value => {
+                            completedCount += value;
+                        });
+                    }
+                });
+                
+                // Update Total inputs deliverables
+                document.getElementById('total-deliverables').textContent = totalCount;
+                
+                // Calculate percentage
+                const percentage = totalCount > 0 ? ((completedCount / totalCount) * 100).toFixed(2) : '0.00';
+                
+                // Update progress ring text
+                document.querySelector('.progress-ring-text').textContent = `${percentage}%`;
+                
+                // Update progress ring arc
+                const circumference = 204.1; // Circumference of the semicircle
+                const offset = circumference - (parseFloat(percentage) / 100) * circumference;
+                const progressPath = document.querySelector('.progress-ring path:nth-child(2)');
+                if (progressPath) {
+                    progressPath.style.strokeDasharray = `${circumference}`;
+                    progressPath.style.strokeDashoffset = `${offset}`;
+                }
+            }
+            
+            // Add event listener for specialty select
+            document.getElementById('specialty').addEventListener('change', function() {
+                updateChart();
+            });
+            
+            // Add event listener for completion status to update progress ring
+            document.getElementById('completion-status').addEventListener('change', function() {
+                updateDeliverablesTable();
+                updateChart();
+                updateProgressRing();
+            });
+            
+            // Initialize progress ring
+            updateProgressRing();
+            
+            // Function to update deliverables table
+            function updateDeliverablesTable() {
+                const specialtyInput = document.getElementById('specialty').value;
+                const designPhaseInput = document.getElementById('design-phase').value;
+                const completionStatusInput = document.getElementById('completion-status').value;
+                const startDate = document.getElementById('start-date').value;
+                const endDate = document.getElementById('end-date').value;
+                
+                const tableBody = document.querySelector('#deliverables-table tbody');
+                tableBody.innerHTML = '';
+                
+                deliverablesData.forEach(item => {
+                    // Filter by specialty input
+                    if (specialtyInput !== 'all' && specialtyInput !== item.specialty) {
+                        return;
+                    }
+                    
+                    // Filter by design phase input
+                    if (designPhaseInput !== 'all' && designPhaseInput !== item.designPhase) {
+                        return;
+                    }
+                    
+                    // Filter by completion status input
+                    if (completionStatusInput !== 'all' && completionStatusInput !== item.status) {
+                        return;
+                    }
+                    
+                    // Filter by Required Completion Time (baseline) based on start and end dates
+                    const requiredCompletionTime = new Date(item.baseline.replace(/\//g, '-'));
+                    const start = startDate ? new Date(startDate) : null;
+                    const end = endDate ? new Date(endDate) : null;
+                    
+                    if (start && requiredCompletionTime < start) {
+                        return;
+                    }
+                    if (end && requiredCompletionTime > end) {
+                        return;
+                    }
+                    
+                    // Create table row
+                    const row = document.createElement('tr');
+                    
+                    // List Number - use fixed wbs value from data
+                    const listNumberCell = document.createElement('td');
+                    listNumberCell.textContent = item.wbs;
+                    row.appendChild(listNumberCell);
+                    
+                    // Content
+                    const contentCell = document.createElement('td');
+                    contentCell.textContent = item.name;
+                    row.appendChild(contentCell);
+                    
+                    // Specialty
+                    const specialtyCell = document.createElement('td');
+                    let specialtyText = '';
+                    switch(item.specialty) {
+                        case 'energy-catenary': specialtyText = 'Energy-Catenary'; break;
+                        case 'signaling-control': specialtyText = 'Signaling and Control'; break;
+                        case 'information-systems': specialtyText = 'Information Systems (Telecom)'; break;
+                        case 'multidisciplinare': specialtyText = 'Multidisciplinare (Simulation)'; break;
+                        case 'interface': specialtyText = 'Interface'; break;
+                        case 'energy-hv-mv-traction': specialtyText = 'Energy-HV/MV-Traction -SCE'; break;
+                        default: specialtyText = 'Architecture'; break;
+                    }
+                    specialtyCell.textContent = specialtyText;
+                    row.appendChild(specialtyCell);
+                    
+                    // Design Phase
+                    const designPhaseCell = document.createElement('td');
+                    let designPhaseText = '';
+                    switch(item.designPhase) {
+                        case 'single-line-basic': designPhaseText = '单线基本设计'; break;
+                        case 'double-line-basic': designPhaseText = '双线基本设计'; break;
+                        case 'execution-section3': designPhaseText = '执行设计-区段3'; break;
+                        case 'execution-section1-2': designPhaseText = '执行设计-区段1、2'; break;
+                        case 'nabs': designPhaseText = 'NABS'; break;
+                        default: designPhaseText = 'Basic Design'; break;
+                    }
+                    designPhaseCell.textContent = designPhaseText;
+                    row.appendChild(designPhaseCell);
+                    
+                    // Required Completion Time
+                    const requiredCompletionCell = document.createElement('td');
+                    requiredCompletionCell.textContent = item.baseline;
+                    row.appendChild(requiredCompletionCell);
+                    
+                    // Actual Completion Time
+                    const actualCompletionCell = document.createElement('td');
+                    actualCompletionCell.textContent = item.finish;
+                    row.appendChild(actualCompletionCell);
+                    
+                    // Completion Status
+                    const completionStatusCell = document.createElement('td');
+                    const statusIndicator = document.createElement('span');
+                    statusIndicator.className = `status-indicator status-${item.status}`;
+                    completionStatusCell.appendChild(statusIndicator);
+                    
+                    let statusText = '';
+                    switch(item.status) {
+                        case 'completed': statusText = 'Completed'; break;
+                        case 'unfinished': statusText = 'Unfinished'; break;
+                        case 'delay-completed': statusText = 'Delay Completed'; break;
+                        case 'delay-unfinished': statusText = 'Delay Unfinished'; break;
+                    }
+                    completionStatusCell.appendChild(document.createTextNode(' ' + statusText));
+                    row.appendChild(completionStatusCell);
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // Function to update chart based on status, specialty, and design phase
+            function updateChart() {
+                const specialtyInput = document.getElementById('specialty').value;
+                const designPhaseInput = document.getElementById('design-phase').value;
+                const completionStatusInput = document.getElementById('completion-status').value;
+                
+                // Calculate data from deliverablesData based on filters
+                const specialties = ['energy-catenary', 'signaling-control', 'information-systems', 'multidisciplinare', 'interface', 'energy-hv-mv-traction'];
+                const specialtyLabels = ['Energy-Catenary', 'Signaling and Control', 'Information Systems (Telecom)', 'Multidisciplinare (Simulation)', 'Interface', 'Energy-HV/MV-Traction -SCE'];
+                const statuses = ['delay-unfinished', 'delay-completed', 'unfinished', 'completed'];
+                const statusLabels = ['Delay Unfinished', 'Delay Completed', 'Unfinished', 'Completed'];
+                
+                // Initialize data arrays
+                const dataByStatus = {
+                    'Delay Unfinished': Array(specialties.length).fill(0),
+                    'Delay Completed': Array(specialties.length).fill(0),
+                    'Unfinished': Array(specialties.length).fill(0),
+                    'Completed': Array(specialties.length).fill(0)
+                };
+                
+                // Filter and count data
+                deliverablesData.forEach(item => {
+                    // Filter by specialty if a specialty is selected
+                    if (specialtyInput !== 'all' && specialtyInput !== item.specialty) {
+                        return;
+                    }
+                    
+                    // Filter by design phase if a design phase is selected
+                    if (designPhaseInput !== 'all' && designPhaseInput !== item.designPhase) {
+                        return;
+                    }
+                    
+                    // Filter by status if a status is selected
+                    if (completionStatusInput !== 'all' && completionStatusInput !== item.status) {
+                        return;
+                    }
+                    
+                    // Get specialty index
+                    const specialtyIndex = specialties.indexOf(item.specialty);
+                    if (specialtyIndex === -1) return;
+                    
+                    // Get status label
+                    let statusLabel = '';
+                    switch(item.status) {
+                        case 'delay-unfinished': statusLabel = 'Delay Unfinished'; break;
+                        case 'delay-completed': statusLabel = 'Delay Completed'; break;
+                        case 'unfinished': statusLabel = 'Unfinished'; break;
+                        case 'completed': statusLabel = 'Completed'; break;
+                        default: return;
+                    }
+                    
+                    // Increment count
+                    dataByStatus[statusLabel][specialtyIndex]++;
+                });
+                
+                // Create datasets
+                const datasets = [
+                    {
+                        label: 'Delay Unfinished',
+                        data: dataByStatus['Delay Unfinished'],
+                        backgroundColor: '#dc3545',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Delay Completed',
+                        data: dataByStatus['Delay Completed'],
+                        backgroundColor: '#e83e8c',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Unfinished',
+                        data: dataByStatus['Unfinished'],
+                        backgroundColor: '#007bff',
+                        stack: 'Stack 0'
+                    },
+                    {
+                        label: 'Completed',
+                        data: dataByStatus['Completed'],
+                        backgroundColor: '#28a745',
+                        stack: 'Stack 0'
+                    }
+                ];
+                
+                // Update chart data
+                deliverablesChart.data = {
+                    labels: specialtyLabels,
+                    datasets: datasets
+                };
+                
+                // Filter by specialty if a specialty is selected
+                if (specialtyInput !== 'all') {
+                    const filteredData = JSON.parse(JSON.stringify(deliverablesChart.data));
+                    // Get the index of the selected specialty
+                    const specialtyIndex = specialties.indexOf(specialtyInput);
+                    
+                    if (specialtyIndex !== undefined && specialtyIndex !== -1) {
+                        // Keep only the selected specialty data
+                        filteredData.labels = [filteredData.labels[specialtyIndex]];
+                        filteredData.datasets.forEach(dataset => {
+                            dataset.data = [dataset.data[specialtyIndex]];
+                        });
+                        deliverablesChart.data = filteredData;
+                    }
+                }
+                
+                // Filter by status if a status is selected
+                if (completionStatusInput !== 'all') {
+                    const filteredData = JSON.parse(JSON.stringify(deliverablesChart.data));
+                    filteredData.datasets = filteredData.datasets.filter(dataset => {
+                        switch(dataset.label) {
+                            case 'Delay Unfinished': return completionStatusInput === 'delay-unfinished';
+                            case 'Completed': return completionStatusInput === 'completed';
+                            case 'Unfinished': return completionStatusInput === 'unfinished';
+                            case 'Delay Completed': return completionStatusInput === 'delay-completed';
+                            default: return true;
+                        }
+                    });
+                    deliverablesChart.data = filteredData;
+                }
+                
+                deliverablesChart.update();
+                updateProgressRing();
+            }
+            
+            // Add event listeners for filters
+            document.getElementById('specialty').addEventListener('change', function() {
+                updateDeliverablesTable();
+                updateChart();
+            });
+            document.getElementById('design-phase').addEventListener('change', function() {
+                updateDeliverablesTable();
+                updateChart();
+            });
+            document.getElementById('completion-status').addEventListener('change', function() {
+                updateDeliverablesTable();
+                updateChart();
+            });
+            document.getElementById('start-date').addEventListener('change', updateDeliverablesTable);
+            document.getElementById('end-date').addEventListener('change', updateDeliverablesTable);
+            
+            // Initialize chart
+            updateChart();
+            
+            // Initialize table
+            updateDeliverablesTable();
+            
+            // Add column resizing functionality
+            function addColumnResizing() {
+                const table = document.getElementById('deliverables-table');
+                const resizers = table.querySelectorAll('.resizer');
+                
+                resizers.forEach(resizer => {
+                    let startX, startWidth;
+                    
+                    resizer.addEventListener('mousedown', function(e) {
+                        startX = e.pageX;
+                        const th = this.parentElement;
+                        startWidth = th.offsetWidth;
+                        
+                        // Add resizing class
+                        this.classList.add('resizing');
+                        
+                        // Add event listeners for mouse move and up
+                        document.addEventListener('mousemove', resize);
+                        document.addEventListener('mouseup', stopResize);
+                    });
+                    
+                    function resize(e) {
+                        const th = resizer.parentElement;
+                        const width = startWidth + (e.pageX - startX);
+                        th.style.width = `${width}px`;
+                    }
+                    
+                    function stopResize() {
+                        resizer.classList.remove('resizing');
+                        document.removeEventListener('mousemove', resize);
+                        document.removeEventListener('mouseup', stopResize);
+                    }
+                });
+            }
+            
+            // Add column resizing to the table
+            addColumnResizing();
+            
+            // Re-add column resizing after table update
+            const originalUpdateDeliverablesTable = updateDeliverablesTable;
+            updateDeliverablesTable = function() {
+                originalUpdateDeliverablesTable();
+                setTimeout(addColumnResizing, 100); // Wait for DOM to update
+            };
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIC 设计部门交付物看板</title>
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+:root {
+    --primary-bg: #f5f6fa;
+    --card-bg: #ffffff;
+    --text-color: #333;
+    --border-color: #e0e0e0;
+    --brand-red: #d32f2f;
+    --brand-blue: #1976d2;
+    --gauge-green: #00c853;
+    --header-bg: #f9fafb;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 20px;
+    gap: 15px;
+}
+
+/* Upper Section */
+.upper-section {
+    display: flex;
+    gap: 15px;
+    min-height: 0;
+    flex: 0 0 auto;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 280px;
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+/* Main Content Styles (Charts Area) */
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.logo-red {
+    color: var(--brand-red);
+}
+
+.logo-systra {
+    color: var(--brand-red); 
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #555;
+}
+
+.date-range {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: #f0f0f0;
+    padding: 8px 10px;
+    border-radius: 4px;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.date-range input {
+    border: none;
+    background: transparent;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2c3e50;
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    letter-spacing: 0.3px;
+}
+
+select, input[type="text"] {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 100%;
+    background-color: #fff;
+}
+
+.search-box {
+    position: relative;
+    margin-top: auto; 
+}
+
+.search-box input[type="text"] {
+    padding: 10px 40px 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    width: 100%;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.search-box input[type="text"]:focus {
+    outline: none;
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+
+.search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--brand-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.search-btn:hover {
+    background-color: #1565c0;
+}
+
+/* Slider */
+.slider-container {
+    height: 30px;
+    position: relative;
+    padding: 10px 0;
+}
+.slider-track {
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+}
+.slider-thumb {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border: 2px solid #666;
+    border-radius: 50%;
+    position: absolute;
+    top: 4px;
+}
+.slider-thumb.left { left: 0; }
+.slider-thumb.right { right: 0; }
+
+.row {
+    display: flex;
+    gap: 15px;
+    width: 100%;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+/* Top Charts */
+.top-charts {
+    height: 300px;
+}
+
+.chart-card {
+    flex: 1;
+    min-width: 0; 
+    background: var(--card-bg);
+}
+
+.chart-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.table-container {
+    flex: 1;
+    overflow: auto;
+}
+
+.work-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.work-schedule-table th,
+.work-schedule-table td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.work-schedule-table th {
+    font-weight: 600;
+    background-color: var(--header-bg);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.work-schedule-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* Middle Section */
+.middle-section {
+    height: 300px;
+}
+
+.summary-card {
+    flex: 7;
+    overflow: hidden;
+}
+
+.kpi-card {
+    flex: 3;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Summary Table */
+.summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.summary-table th, .summary-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-table th {
+    background-color: var(--header-bg);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+}
+
+.summary-table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+.total-row {
+    font-weight: bold;
+    background-color: #f9f9f9;
+}
+
+/* KPIs & Gauges */
+.approval-row {
+    display: flex;
+    flex: 1;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.approval-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.kpi-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.kpi-label {
+    font-size: 12px;
+    color: #777;
+    margin-bottom: 10px;
+}
+
+.gauge-chart {
+    width: 100%;
+    height: 100%;
+    min-height: 120px;
+}
+
+/* Bottom Section */
+.bottom-section {
+    flex: 1;
+    min-height: 0; 
+    display: flex;
+    flex-direction: column;
+}
+
+/* Bottom Task Table */
+.table-card {
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 表格容器 */
+.task-table-container {
+    flex: 1;
+    overflow: auto;
+}
+
+/* 任务表格 */
+.task-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.task-table th,
+.task-table td {
+    padding: 10px 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.task-table th {
+    font-weight: 600;
+    background-color: var(--header-bg);
+    border-bottom: 2px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.task-table td {
+    border-bottom: 1px solid #eee;
+}
+
+.task-table tbody tr:hover {
+    background-color: #f9f9f9;
+}
+
+/* 统一列宽 */
+.task-table th:nth-child(1),
+.task-table td:nth-child(1) { width: 180px; min-width: 180px; }
+.task-table th:nth-child(2),
+.task-table td:nth-child(2) { width: 220px; min-width: 220px; }
+.task-table th:nth-child(3),
+.task-table td:nth-child(3) { width: 120px; min-width: 120px; }
+.task-table th:nth-child(4),
+.task-table td:nth-child(4) { width: 100px; min-width: 100px; }
+.task-table th:nth-child(5),
+.task-table td:nth-child(5) { width: 120px; min-width: 120px; }
+.task-table th:nth-child(6),
+.task-table td:nth-child(6) { width: 110px; min-width: 110px; }
+.task-table th:nth-child(7),
+.task-table td:nth-child(7) { width: 120px; min-width: 120px; }
+.task-table th:nth-child(8),
+.task-table td:nth-child(8) { width: 110px; min-width: 110px; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #f1f1f1; 
+}
+::-webkit-scrollbar-thumb {
+    background: #ccc; 
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa; 
+}
+
+/* Multiselect Styling */
+.multiselect {
+    position: relative;
+    width: 100%;
+}
+.select-box {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+.select-box:hover {
+    border-color: var(--brand-blue);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.1);
+}
+.arrow {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #666;
+    transition: transform 0.2s ease;
+}
+.multiselect:hover .arrow {
+    border-top-color: var(--brand-blue);
+}
+.options-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    z-index: 100;
+    max-height: 250px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 0 0 6px 6px;
+}
+.options-container.hidden {
+    display: none;
+}
+.option {
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.2s ease;
+}
+.option:hover {
+    background-color: #f0f7ff;
+}
+.option input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--brand-blue);
+}
+.option input[type="checkbox"]:checked {
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Upper Section: Sidebar + Charts -->
+        <div class="upper-section">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <span class="logo-red">TIC</span> <span class="logo-systra">设计交付物看板</span>
+                </div>
+                
+                <div class="filter-group">
+                    <div class="date-range">
+                        <input type="date" id="startDate" value="2025-01-01">
+                        <span class="separator">-</span>
+                        <input type="date" id="endDate" value="2028-12-31">
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="slider-container">
+                        <div class="slider-track"></div>
+                        <div class="slider-thumb left"></div>
+                        <div class="slider-thumb right"></div>
+                    </div>
+                </div>
+
+
+
+                <div class="filter-group">
+                    <label>文件类型</label>
+                    <div class="multiselect" id="disciplineFilter">
+                        <div class="select-box">
+                            <div class="selected-options">所有</div>
+                            <div class="arrow"></div>
+                        </div>
+                        <div class="options-container hidden">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label>设计阶段</label>
+                    <select id="reviewFilter">
+                        <option value="all">所有</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>版本</label>
+                    <select id="deliveryStatusFilter">
+                        <option value="all">所有</option>
+                    </select>
+                </div>
+
+                <div class="filter-group search-box">
+                    <input type="text" id="searchInput" placeholder="Search for a code">
+                    <button class="search-btn">→</button>
+                </div>
+            </div>
+
+            <!-- Main Content (Charts) -->
+            <div class="main-content">
+                <!-- Top Row: Work Schedule Table -->
+                <div class="row top-charts">
+                    <div class="card chart-card" style="flex: 1;">
+                        <div class="card-header" data-lang="zh">里程碑节点</div><div class="card-header" data-lang="en" style="display: none;">Work Schedule</div>
+                        <div class="table-container">
+                            <table class="work-schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th data-lang="zh">WBS名称</th><th data-lang="en" style="display: none;">WBS Name</th>
+                                        <th data-lang="zh">作业名称</th><th data-lang="en" style="display: none;">Task Name</th>
+                                        <th data-lang="zh">作业负责人</th><th data-lang="en" style="display: none;">Responsible</th>
+                                        <th data-lang="zh">计划完成时间</th><th data-lang="en" style="display: none;">Planned Completion Date</th>
+                                        <th data-lang="zh">完成百分比%</th><th data-lang="en" style="display: none;">Completion %</th>
+                                        <th data-lang="zh">实际完成时间</th><th data-lang="en" style="display: none;">Actual Completion Date</th>
+                                        <th data-lang="zh">关联设计交付物数量</th><th data-lang="en" style="display: none;">Related Deliverables</th>
+                                        <th data-lang="zh">通过业主批复数量</th><th data-lang="en" style="display: none;">Approved by Owner</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workScheduleBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Row: Summary Table & KPIs -->
+                <div class="row middle-section">
+                    <!-- Review Chart -->
+                    <div class="card summary-card">
+                        <div class="card-header">交付物状态分布</div>
+                        <div id="reviewChart" class="chart-container"></div>
+                    </div>
+
+                    <!-- KPIs & Gauges -->
+                    <div class="card kpi-card">
+                        <div class="approval-row">
+                            <div class="approval-item">
+                                <div class="kpi-value" id="kpiSPV">0</div>
+                                <div class="kpi-label">通过SPV审批</div>
+                                <div id="gaugeSPV" class="gauge-chart"></div>
+                            </div>
+                            <div class="approval-item">
+                                <div class="kpi-value" id="kpiTUV">0</div>
+                                <div class="kpi-label">通过TUV审批</div>
+                                <div id="gaugeTUV" class="gauge-chart"></div>
+                            </div>
+                            <div class="approval-item">
+                                <div class="kpi-value" id="kpiOwner">0</div>
+                                <div class="kpi-label">通过业主批复</div>
+                                <div id="gaugeOwner" class="gauge-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row: Task List (Full Width) -->
+        <div class="bottom-section">
+            <div class="card table-card">
+                <div class="task-table-container">
+                    <table class="task-table">
+                        <thead>
+                            <tr>
+                                <th>文件编号</th>
+                                <th>交付物名称</th>
+                                <th>文件类型</th>
+                                <th>设计阶段</th>
+                                <th>版本</th>
+                                <th>要求完成时间</th>
+                                <th>累计完成比例</th>
+                                <th>实际完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="taskTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// Mock Data Generation
+const disciplines = ["所有", "项目管理", "需求管理", "场段设备", "电信系统", "供电系统", "接触网系统", "接口集成", "信号系统", "指导原则", "BIM", "RAMS"];
+const responsibles = ["John Doe", "Jane Smith", "Team Alpha", "Team Beta", "External Consultant"];
+const reviews = ["Delivery - 0", "Delivery - 1", "Delivery - A", "Delivery - B", "Delivery - C", "Delivery - D"];
+const statuses = ["Not Started", "In Progress", "Delivered", "Approved", "Approved with comment", "For Correction"];
+const workflows = ["SYSTRA Submission - rev A", "CRRC Comments", "SYSTRA Review - rev B", "CRRC & SPV Comments", "SYSTRA 2º Review - rev 0"];
+
+function generateDate(start, end) {
+    return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+}
+
+function formatDate(date) {
+    if (!date) return "";
+    return date.toISOString().split('T')[0];
+}
+
+const mockData = [];
+const startDateRange = new Date("2025-01-01");
+const endDateRange = new Date("2028-12-31");
+
+const designPhases = ['单线基本设计', '双线基本设计', '执行设计-区段3', '执行设计-区段1、2', 'NABS'];
+const versions = ['A', 'B', 'C', 'D', 'E', '0', '输入清单已完成'];
+
+for (let i = 0; i < 200; i++) {
+    const start = generateDate(startDateRange, endDateRange);
+    const finish = new Date(start.getTime() + (Math.random() * 30 + 5) * 24 * 60 * 60 * 1000);
+    
+    let delivery = null;
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    
+    if (["Delivered", "Approved", "Approved with comment", "For Correction"].includes(status)) {
+        delivery = new Date(finish.getTime() + (Math.random() * 10 - 5) * 24 * 60 * 60 * 1000);
+    }
+
+    const randomDiscipline = disciplines[Math.floor(Math.random() * (disciplines.length - 1)) + 1];
+    const randomDesignPhase = designPhases[Math.floor(Math.random() * designPhases.length)];
+    const randomVersion = versions[Math.floor(Math.random() * versions.length)];
+    
+    mockData.push({
+        id: i,
+        wbs: `1.3.${Math.floor(Math.random() * 9)}.${Math.floor(Math.random() * 9)}.${Math.floor(Math.random() * 9)}`,
+        code: `1CRR00324-FPR-SYS-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}-X30-M3-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        task: `BIM - MODEL - ${randomDiscipline} - SECTION ${String.fromCharCode(65 + Math.floor(Math.random() * 5))}`,
+        workflow: workflows[Math.floor(Math.random() * workflows.length)],
+        deliveryStatus: status,
+        startDate: start,
+        finishDate: finish,
+        deliveryDate: delivery,
+        responsible: responsibles[Math.floor(Math.random() * responsibles.length)],
+        discipline: randomDiscipline,
+        review: reviews[Math.floor(Math.random() * reviews.length)],
+        designPhase: randomDesignPhase,
+        version: randomVersion
+    });
+}
+
+let currentData = [...mockData];
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', () => {
+    initFilters();
+    initCharts();
+    updateDashboard();
+
+    document.getElementById('startDate').addEventListener('change', filterData);
+    document.getElementById('endDate').addEventListener('change', filterData);
+    document.getElementById('reviewFilter').addEventListener('change', filterData);
+    document.getElementById('deliveryStatusFilter').addEventListener('change', filterData);
+    document.getElementById('searchInput').addEventListener('input', filterData);
+    
+    const multiSelect = document.getElementById('disciplineFilter');
+    const selectBox = multiSelect.querySelector('.select-box');
+    const optionsContainer = multiSelect.querySelector('.options-container');
+
+    selectBox.addEventListener('click', () => {
+        optionsContainer.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!multiSelect.contains(e.target)) {
+            optionsContainer.classList.add('hidden');
+        }
+    });
+});
+
+function initFilters() {
+
+
+    const disciplineContainer = document.querySelector('#disciplineFilter .options-container');
+    disciplineContainer.innerHTML = '';
+    
+    disciplines.forEach(d => {
+        const div = document.createElement('div');
+        div.className = 'option';
+        div.innerHTML = `<input type="checkbox" value="${d}" ${d === '所有' ? 'checked' : ''} /> ${d}`;
+        const checkbox = div.querySelector('input');
+        checkbox.addEventListener('change', (e) => {
+            const checkboxes = document.querySelectorAll('#disciplineFilter input[type="checkbox"]');
+            const allCheckbox = Array.from(checkboxes).find(cb => cb.value === '所有');
+            
+            if (e.target.value === '所有' && e.target.checked) {
+                // 选择"所有"时，取消其他所有选项
+                checkboxes.forEach(cb => {
+                    if (cb.value !== '所有') cb.checked = false;
+                });
+            } else if (e.target.value !== '所有' && e.target.checked) {
+                // 选择其他选项时，取消"所有"
+                if (allCheckbox) allCheckbox.checked = false;
+            } else if (e.target.value !== '所有' && !e.target.checked) {
+                // 取消其他选项时，如果没有选中任何选项，自动选中"所有"
+                const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                if (!anyChecked && allCheckbox) allCheckbox.checked = true;
+            }
+            
+            updateMultiselectLabel();
+            filterData();
+        });
+        disciplineContainer.appendChild(div);
+    });
+
+    const designPhaseSelect = document.getElementById('reviewFilter');
+    const designPhases = ['单线基本设计', '双线基本设计', '执行设计-区段3', '执行设计-区段1、2', 'NABS'];
+    designPhases.forEach(phase => {
+        const option = document.createElement('option');
+        option.value = phase;
+        option.textContent = phase;
+        designPhaseSelect.appendChild(option);
+    });
+
+    const versionSelect = document.getElementById('deliveryStatusFilter');
+    const versions = ['A', 'B', 'C', 'D', 'E', '0', '输入清单已完成'];
+    versions.forEach(v => {
+        const option = document.createElement('option');
+        option.value = v;
+        option.textContent = v;
+        versionSelect.appendChild(option);
+    });
+}
+
+function updateMultiselectLabel() {
+    const checkboxes = document.querySelectorAll('#disciplineFilter input[type="checkbox"]');
+    const selected = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+    const label = document.querySelector('#disciplineFilter .selected-options');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (selected.includes('所有')) {
+        label.textContent = "所有";
+        searchInput.placeholder = "Search for a code";
+    } else if (selected.length === 0) {
+        label.textContent = "None";
+        searchInput.placeholder = "Search for a code";
+    } else if (selected.length <= 3) {
+        label.textContent = selected.join(", ");
+        searchInput.placeholder = `Search in: ${selected.join(", ")}`;
+    } else {
+        label.textContent = `${selected.length} selected`;
+        searchInput.placeholder = `Search in: ${selected.length} disciplines`;
+    }
+}
+
+function initCharts() {
+    charts.gaugeSPV = echarts.init(document.getElementById('gaugeSPV'));
+    charts.gaugeTUV = echarts.init(document.getElementById('gaugeTUV'));
+    charts.gaugeOwner = echarts.init(document.getElementById('gaugeOwner'));
+    charts.reviewChart = echarts.init(document.getElementById('reviewChart'));
+
+    window.addEventListener('resize', () => {
+        Object.values(charts).forEach(chart => chart.resize());
+    });
+}
+
+function filterData() {
+    const start = new Date(document.getElementById('startDate').value);
+    const end = new Date(document.getElementById('endDate').value);
+    const designPhase = document.getElementById('reviewFilter').value;
+    const version = document.getElementById('deliveryStatusFilter').value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    
+    const selectedDisciplines = Array.from(document.querySelectorAll('#disciplineFilter input[type="checkbox"]:checked')).map(cb => cb.value);
+
+    currentData = mockData.filter(item => {
+        const dateInRange = (item.startDate >= start && item.startDate <= end) || 
+                            (item.finishDate >= start && item.finishDate <= end);
+        const discMatch = selectedDisciplines.includes('所有') || selectedDisciplines.includes(item.discipline);
+        const searchMatch = !search || item.code.toLowerCase().includes(search) || item.task.toLowerCase().includes(search);
+        
+        // 设计阶段匹配 - 使用数据中的designPhase属性
+        const phaseMatch = designPhase === 'all' || item.designPhase === designPhase;
+        
+        // 版本匹配 - 使用数据中的version属性
+        const versionMatch = version === 'all' || item.version === version;
+
+        return dateInRange && discMatch && searchMatch && phaseMatch && versionMatch;
+    });
+
+    updateDashboard();
+}
+
+function updateDashboard() {
+    renderTable();
+    renderWorkScheduleTable();
+    renderReviewChart();
+    renderKPIs();
+    renderCharts();
+}
+
+function renderWorkScheduleTable() {
+    const tbody = document.getElementById('workScheduleBody');
+    tbody.innerHTML = '';
+    
+    const wbsNames = ['1.1 项目管理', '1.2 设计管理', '1.3 技术设计', '1.4 施工配合', '1.5 竣工验收'];
+    const taskNames = ['项目启动', '需求分析', '初步设计', '详细设计', '施工图设计', '施工交底', '验收准备', '竣工验收'];
+    const responsibles = ['张三', '李四', '王五', '赵六', '钱七'];
+    
+    const rowsHtml = wbsNames.map((wbs, index) => {
+        const taskName = taskNames[index % taskNames.length];
+        const responsible = responsibles[index % responsibles.length];
+        const plannedDate = new Date();
+        plannedDate.setDate(plannedDate.getDate() + Math.floor(Math.random() * 30));
+        const completionRate = Math.floor(Math.random() * 101);
+        const actualDate = completionRate >= 100 ? new Date() : '';
+        const deliverablesCount = Math.floor(Math.random() * 10) + 1;
+        const approvedCount = Math.floor(Math.random() * (deliverablesCount + 1));
+        
+        return `
+        <tr>
+            <td>${wbs}</td>
+            <td>${taskName}</td>
+            <td>${responsible}</td>
+            <td>${formatDate(plannedDate)}</td>
+            <td>${completionRate}%</td>
+            <td>${formatDate(actualDate)}</td>
+            <td>${deliverablesCount}</td>
+            <td>${approvedCount}</td>
+        </tr>
+    `;
+    }).join('');
+    
+    tbody.innerHTML = rowsHtml;
+}
+
+function renderTable() {
+    const tbody = document.getElementById('taskTableBody');
+    tbody.innerHTML = '';
+    
+    const rowsHtml = currentData.slice(0, 100).map(item => {
+        const completionRate = Math.floor(Math.random() * 101);
+        return `
+        <tr>
+            <td>${item.code}</td>
+            <td>${item.task}</td>
+            <td>${item.discipline}</td>
+            <td>${item.designPhase}</td>
+            <td>${item.version}</td>
+            <td>${formatDate(item.startDate)}</td>
+            <td>${completionRate}%</td>
+            <td>${formatDate(item.finishDate)}</td>
+        </tr>
+    `;
+    }).join('');
+    
+    tbody.innerHTML = rowsHtml;
+}
+
+function renderReviewChart() {
+    const summary = {};
+    const disciplines = [...new Set(currentData.map(d => d.discipline))].sort();
+
+    // 为每个discipline计算版本分布
+    disciplines.forEach(discipline => {
+        const items = currentData.filter(d => d.discipline === discipline);
+        
+        const versionCounts = {
+            inputCompleted: 0,
+            submitVersionsABCDE: 0,
+            submitVersion0: 0
+        };
+        
+        items.forEach(item => {
+            // 使用任务数据中的版本
+            const version = item.version;
+            
+            if (version === '输入清单已完成') {
+                versionCounts.inputCompleted++;
+            } else if (['A', 'B', 'C', 'D', 'E'].includes(version)) {
+                versionCounts.submitVersionsABCDE++;
+            } else if (version === '0') {
+                versionCounts.submitVersion0++;
+            }
+        });
+
+        summary[discipline] = versionCounts;
+    });
+
+    const option = {
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                type: 'shadow'
+            }
+        },
+        legend: {
+            data: ['输入清单已完成', '提交版本 A、B、C、D、E', '提交版本 0']
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            data: disciplines,
+            axisLabel: {
+                interval: 0,
+                rotate: 45
+            }
+        },
+        yAxis: {
+            type: 'value',
+            name: '任务总数'
+        },
+        series: [
+            {
+                name: '输入清单已完成',
+                type: 'bar',
+                stack: 'total',
+                emphasis: {
+                    focus: 'series'
+                },
+                barWidth: '40%',
+                data: disciplines.map(discipline => summary[discipline].inputCompleted),
+                itemStyle: {
+                    color: '#52c41a'
+                }
+            },
+            {
+                name: '提交版本 A、B、C、D、E',
+                type: 'bar',
+                stack: 'total',
+                emphasis: {
+                    focus: 'series'
+                },
+                barWidth: '40%',
+                data: disciplines.map(discipline => summary[discipline].submitVersionsABCDE),
+                itemStyle: {
+                    color: '#1890ff'
+                }
+            },
+            {
+                name: '提交版本 0',
+                type: 'bar',
+                stack: 'total',
+                emphasis: {
+                    focus: 'series'
+                },
+                barWidth: '40%',
+                data: disciplines.map(discipline => summary[discipline].submitVersion0),
+                itemStyle: {
+                    color: '#ff4d4f'
+                }
+            }
+        ]
+    };
+
+    charts.reviewChart.setOption(option);
+}
+
+function renderKPIs() {
+    const totalDocs = currentData.length;
+    
+    // 模拟三个审批指标的数据
+    const spvApproved = Math.floor(Math.random() * totalDocs * 0.8) + Math.floor(totalDocs * 0.2);
+    const tuvApproved = Math.floor(Math.random() * totalDocs * 0.7) + Math.floor(totalDocs * 0.1);
+    const ownerApproved = Math.floor(Math.random() * totalDocs * 0.9) + Math.floor(totalDocs * 0.1);
+    
+    document.getElementById('kpiSPV').textContent = spvApproved;
+    document.getElementById('kpiTUV').textContent = tuvApproved;
+    document.getElementById('kpiOwner').textContent = ownerApproved;
+
+    const spvPct = totalDocs ? Math.round((spvApproved / totalDocs) * 100) : 0;
+    const tuvPct = totalDocs ? Math.round((tuvApproved / totalDocs) * 100) : 0;
+    const ownerPct = totalDocs ? Math.round((ownerApproved / totalDocs) * 100) : 0;
+
+    updateGauge(charts.gaugeSPV, spvPct, '#52c41a');
+    updateGauge(charts.gaugeTUV, tuvPct, '#1890ff');
+    updateGauge(charts.gaugeOwner, ownerPct, '#faad14');
+}
+
+function renderCharts() {
+    // 不再需要渲染S曲线图表
+    // 只需要确保其他图表正常渲染
+    // 图表会在renderReviewChart和renderKPIs中更新
+}
+
+function updateGauge(chart, value, color) {
+    const option = {
+        series: [
+            {
+                type: 'gauge',
+                startAngle: 180,
+                endAngle: 0,
+                center: ['50%', '75%'],
+                radius: '100%',
+                min: 0,
+                max: 100,
+                splitNumber: 1,
+                axisLine: {
+                    lineStyle: {
+                        width: 30,
+                        color: [[1, '#f0f0f0']]
+                    }
+                },
+                progress: {
+                    show: true,
+                    width: 30,
+                    itemStyle: { color: color }
+                },
+                pointer: { show: false },
+                axisTick: { show: false },
+                splitLine: { show: false },
+                axisLabel: { show: false },
+                detail: {
+                    valueAnimation: true,
+                    offsetCenter: [0, '-20%'],
+                    fontSize: 20,
+                    fontWeight: 'bold',
+                    formatter: '{value}%',
+                    color: '#333'
+                },
+                data: [{ value: value }]
+            }
+        ]
+    };
+    chart.setOption(option);
+}
+    </script>
+</body>
+</html>
