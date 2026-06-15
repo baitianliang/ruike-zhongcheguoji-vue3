@@ -2,9 +2,27 @@
 
 const routes = [
     {
+        path: '/',
+        name: '导航页',
+        component: () => import('../views/home.vue'),
+        meta: {
+            hidden: true
+        }
+    },
+    {
         path: '/directorDashboard',
         name: '登录首页（项目总监）',
         component: () => import('../views/directorDashboard.vue')
+    },
+    {
+        path: '/projectDirector',
+        name: '项目总监',
+        component: () => import('../views/projectDirector.vue')
+    },
+    {
+        path: '/newProjectDirector',
+        name: '新项目总监',
+        component: () => import('../views/projectDirector2.vue')
     },
     {
         path: '/managerDashboard',
@@ -27,6 +45,11 @@ const routes = [
         component: () => import('../views/subcontractorDashboard.vue')
     },
     {
+        path: '/interfacesDashboard',
+        name: '接口管理看板',
+        component: () => import('../views/interfacesDashboard.vue')
+    },
+    {
         path: '/GanttPage',
         name: '甘特图操作页',
         component: () => import('../views/ganttPage.vue')
@@ -42,9 +65,24 @@ const routes = [
         component: () => import('../views/dliverablesPage.vue')
     },
     {
+        path: '/newDliverables',
+        name: '新交付物看板',
+        component: () => import('../views/dliverablesPage2.vue')
+    },
+    {
         path: '/qingdan',
         name: '交付物清单',
         component: () => import('../views/qingdanPage.vue')
+    },
+    {
+        path: '/demandMatrix',
+        name: '需求矩阵',
+        component: () => import('../views/demandMatrix.vue')
+    },
+    {
+        path: '/customTable',
+        name: '自定义表格',
+        component: () => import('../views/customTable.vue')
     },
 ]
 

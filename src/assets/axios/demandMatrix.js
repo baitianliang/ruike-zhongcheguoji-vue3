@@ -4,7 +4,7 @@ const Qs = require('qs');
 export default {
     getTableData() {
         // ?${Qs.stringify(query)}
-        return axios.get(`report/getPscPictureData?viewName=V_CRHK_IL_SRQD`)
+        return axios.get(`report/getPscPictureData?viewName=UNIFIER_CRHK_XQJZ`)
     },
     getOptionsList() {
         return axios.get(`report/generalDataDictionary`)

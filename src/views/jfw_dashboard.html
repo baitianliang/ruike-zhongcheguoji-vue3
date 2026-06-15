@@ -1,0 +1,2313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIC设计交付物看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+    :root {
+      --bg-deep: #020a18;
+      --bg-mid: #061228;
+      --panel: rgba(6, 18, 48, 0.65);
+      --panel-hover: rgba(10, 28, 68, 0.75);
+      --panel-border: rgba(0, 180, 255, 0.15);
+      --panel-border-hover: rgba(0, 212, 255, 0.45);
+      --glow-cyan: rgba(0, 212, 255, 0.12);
+      --glow-purple: rgba(139, 92, 246, 0.1);
+      --line: rgba(0, 180, 255, 0.25);
+      --line-strong: rgba(0, 212, 255, 0.55);
+      --text: #eaf4ff;
+      --text-bright: #ffffff;
+      --muted: #6b9ec4;
+      --soft: #a3ccec;
+      --green: #00f0c8;
+      --green-dim: rgba(0, 240, 200, 0.15);
+      --cyan: #00d4ff;
+      --cyan-dim: rgba(0, 212, 255, 0.12);
+      --blue: #2a7fff;
+      --purple: #8b5cf6;
+      --purple-dim: rgba(139, 92, 246, 0.12);
+      --orange: #ff9f43;
+      --yellow: #ffd700;
+      --red: #ff4757;
+      --red-dim: rgba(255, 71, 87, 0.12);
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background: var(--bg-deep);
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-size: 18px;
+      color: var(--text);
+    }
+
+    body {
+      background-attachment: fixed;
+      background:
+        radial-gradient(ellipse at 15% 5%, rgba(0, 100, 255, 0.12) 0%, transparent 45%),
+        radial-gradient(ellipse at 85% 5%, rgba(139, 92, 246, 0.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 50% 95%, rgba(0, 60, 180, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 40, 100, 0.06) 0%, transparent 60%),
+        linear-gradient(180deg, #020a18 0%, #061228 40%, #0a1a3a 70%, #020a18 100%);
+    }
+
+    #bgCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0 0 4px 0;
+      animation: pageIn 1s ease-out both;
+      gap: 4px;
+    }
+
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== 顶部导航栏 ===== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 72px;
+      padding: 0 24px;
+      position: relative;
+      flex-shrink: 0;
+      margin-bottom: -8px;
+    }
+
+
+
+    .header::before {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 3%;
+      right: 3%;
+      height: 6px;
+      background: linear-gradient(90deg, transparent 0%, rgba(0,212,255,0.06) 15%, rgba(0,212,255,0.12) 50%, rgba(0,212,255,0.06) 85%, transparent 100%);
+      filter: blur(4px);
+    }
+
+    .header-time {
+      position: absolute;
+      left: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--cyan);
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      font-family: 'Orbitron', monospace;
+      text-shadow: 0 0 16px rgba(0, 212, 255, 0.35);
+    }
+
+    .header-time svg {
+      color: var(--cyan);
+      filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.5));
+      animation: clockPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes clockPulse {
+      0%, 100% { filter: drop-shadow(0 0 6px rgba(0, 212, 255, 0.4)); }
+      50% { filter: drop-shadow(0 0 12px rgba(0, 212, 255, 0.7)); }
+    }
+
+    .nav-right {
+      display: flex;
+      gap: 10px;
+      position: absolute;
+      right: 24px;
+    }
+
+    .nav-btn {
+      padding: 8px 22px;
+      border: 1px solid rgba(0, 180, 255, 0.2);
+      background: rgba(0, 40, 100, 0.3);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--soft);
+      font-size: 17px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0,212,255,0.1), transparent);
+      opacity: 0;
+      transition: opacity 0.35s;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      background: rgba(0, 100, 200, 0.3);
+      border-color: var(--cyan);
+      color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 20px rgba(0, 212, 255, 0.05);
+      transform: translateY(-1px);
+    }
+
+    .nav-btn:hover::before, .nav-btn.active::before {
+      opacity: 1;
+    }
+
+    .header-title {
+      text-align: center;
+    }
+
+    .header-title h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      background: linear-gradient(135deg, #ffffff 0%, #7ec8ff 40%, #a78bfa 70%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 20px rgba(0, 180, 255, 0.3));
+      animation: titleShimmer 4s ease-in-out infinite;
+      background-size: 200% 100%;
+    }
+
+    @keyframes titleShimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* ===== 主体内容区 - 左侧筛选栏 + 右侧主内容 ===== */
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 4px;
+      margin-top: 0;
+      padding: 0 20px;
+      padding-bottom: 0;
+      min-height: 0;
+    }
+
+    .sidebar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
+    }
+
+    /* 左侧筛选栏 */
+    .sidebar {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
+    }
+
+    /* 右侧内容区 */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
+      margin-bottom: -32px;
+    }
+
+    /* 里程碑节点完成情况统计 - 高度调整 */
+    .content-area .panel:nth-child(1) {
+      flex: 0.82;
+      min-height: 0;
+    }
+
+    /* 里程碑卡片取消滚轮滑动 */
+    .content-area .panel:nth-child(1) .panel-body-no-header {
+      overflow: hidden;
+    }
+
+    /* 交付物状态分布 - 高度增加 */
+    .content-area .panel:nth-child(2) {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* 底部区域 - 统计概览2/5，各专业分布3/5 */
+    .bottom-section {
+      display: grid;
+      grid-template-columns: 2fr 3fr;
+      gap: 4px;
+      padding: 0 20px 4px 20px;
+      margin-top: -24px;
+    }
+
+    .bottom-section.full-width {
+      grid-template-columns: 1fr;
+      margin-top: 0;
+      padding: 0 20px 4px 20px;
+    }
+    
+    .bottom-section.full-width .panel {
+      margin-top: 0;
+    }
+
+    .bottom-panel {
+      min-height: 0;
+    }
+
+    /* 统计卡片网格 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .stats-grid .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 20px;
+      background: rgba(0, 30, 80, 0.4);
+      border: 1px solid rgba(0, 180, 255, 0.15);
+      border-radius: var(--radius);
+      transition: all 0.3s ease;
+    }
+
+    .stats-grid .stat-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      background: rgba(0, 50, 120, 0.4);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+    }
+
+    .stats-grid .stat-icon-wrap {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: rgba(0, 180, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .stats-grid .stat-icon-wrap.cyan-icon {
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 180, 255, 0.1));
+      color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+
+    .stats-grid .stat-icon-wrap.purple-icon {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(100, 50, 200, 0.1));
+      color: var(--purple);
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .stats-grid .stat-icon-wrap.green-icon {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(20, 160, 60, 0.1));
+      color: var(--green);
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+    }
+
+    .stats-grid .stat-icon-wrap.orange-icon {
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(200, 80, 10, 0.1));
+      color: var(--orange);
+      box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+    }
+
+    .stats-grid .stat-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .stats-grid .stat-label {
+      font-size: 14px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .stats-grid .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'Orbitron', monospace;
+    }
+
+    .stats-overview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 4px;
+      align-items: start;
+    }
+
+    .stat-big-card {
+      text-align: center;
+      padding: 10px 6px;
+      background: rgba(10, 30, 60, 0.5);
+      border-radius: 10px;
+      border: 1px solid rgba(0, 212, 255, 0.15);
+    }
+
+    .stat-big-value {
+      font-size: 28px;
+      font-weight: 700;
+      font-family: 'Orbitron', monospace;
+      line-height: 1.2;
+    }
+
+    .stat-big-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+
+    .gauge-wrapper {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    /* ===== 面板通用样式 ===== */
+    .panel {
+      position: relative;
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: panelIn 0.8s ease-out both;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin: 0;
+    }
+
+    .panel:nth-child(1) { animation-delay: 0.1s; }
+    .panel:nth-child(2) { animation-delay: 0.2s; }
+    .panel:nth-child(3) { animation-delay: 0.3s; }
+    .panel:nth-child(4) { animation-delay: 0.4s; }
+    .panel:nth-child(5) { animation-delay: 0.5s; }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(16px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(0,212,255,0.5) 30%, rgba(139,92,246,0.4) 70%, transparent 100%);
+      z-index: 2;
+    }
+
+    .panel::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 40px;
+      background: linear-gradient(180deg, rgba(0,180,255,0.04) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .panel:hover {
+      border-color: var(--panel-border-hover);
+      background: var(--panel-hover);
+      box-shadow: 0 8px 40px rgba(0, 100, 255, 0.1), 0 0 1px rgba(0, 212, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px 10px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .panel-header::before {
+      content: '';
+      width: 3px;
+      height: 18px;
+      background: linear-gradient(180deg, var(--cyan), var(--purple));
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.4);
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .breathing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .breathing-dot.cyan {
+      background: var(--cyan);
+      box-shadow: 0 0 8px var(--cyan);
+      animation: breatheCyan 2s ease-in-out infinite;
+    }
+
+    .breathing-dot.blue {
+      background: var(--blue);
+      box-shadow: 0 0 8px var(--blue);
+      animation: breatheBlue 2s ease-in-out infinite;
+    }
+
+    .breathing-dot.purple {
+      background: var(--purple);
+      box-shadow: 0 0 8px var(--purple);
+      animation: breathePurple 2s ease-in-out infinite;
+    }
+
+    .breathing-dot.orange {
+      background: var(--orange);
+      box-shadow: 0 0 8px var(--orange);
+      animation: breatheOrange 2s ease-in-out infinite;
+    }
+
+    .breathing-dot.green {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: breatheGreen 2s ease-in-out infinite;
+    }
+
+    @keyframes breatheCyan {
+      0%, 100% { box-shadow: 0 0 6px var(--cyan); opacity: 0.7; }
+      50% { box-shadow: 0 0 14px var(--cyan), 0 0 20px var(--cyan); opacity: 1; }
+    }
+
+    @keyframes breatheBlue {
+      0%, 100% { box-shadow: 0 0 6px var(--blue); opacity: 0.7; }
+      50% { box-shadow: 0 0 14px var(--blue), 0 0 20px var(--blue); opacity: 1; }
+    }
+
+    @keyframes breathePurple {
+      0%, 100% { box-shadow: 0 0 6px var(--purple); opacity: 0.7; }
+      50% { box-shadow: 0 0 14px var(--purple), 0 0 20px var(--purple); opacity: 1; }
+    }
+
+    @keyframes breatheOrange {
+      0%, 100% { box-shadow: 0 0 6px var(--orange); opacity: 0.7; }
+      50% { box-shadow: 0 0 14px var(--orange), 0 0 20px var(--orange); opacity: 1; }
+    }
+
+    @keyframes breatheGreen {
+      0%, 100% { box-shadow: 0 0 6px var(--green); opacity: 0.7; }
+      50% { box-shadow: 0 0 14px var(--green), 0 0 20px var(--green); opacity: 1; }
+    }
+
+    .panel-body {
+      padding: 10px 20px 14px;
+      position: relative;
+      z-index: 2;
+      overflow: auto;
+    }
+
+    /* 筛选条件面板的内边距更大 */
+    .sidebar .panel:first-child .panel-body {
+      padding: 24px 28px 28px;
+    }
+
+    .panel-body-no-header {
+      padding: 12px 20px 4px;
+      position: relative;
+      z-index: 2;
+      overflow: auto;
+    }
+
+    /* ===== 筛选区域样式 ===== */
+    .filter-section {
+      margin-bottom: 12px;
+    }
+
+    .filter-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .filter-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: block;
+      letter-spacing: 0.5px;
+    }
+
+    .filter-select {
+      width: 100%;
+      padding: 7px 12px;
+      border: 1px solid rgba(0, 180, 255, 0.15);
+      background: rgba(0, 40, 100, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--text);
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.3s;
+      appearance: none;
+      position: relative;
+      font-family: inherit;
+    }
+
+    .filter-select:hover {
+      border-color: rgba(0, 212, 255, 0.35);
+      background: rgba(0, 60, 120, 0.3);
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .select-wrapper::after {
+      content: '\25BC';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--cyan);
+      font-size: 12px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .date-range {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .date-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid rgba(0, 180, 255, 0.15);
+      background: rgba(0, 40, 100, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--text);
+      font-size: 14px;
+      border-radius: var(--radius-sm);
+      transition: all 0.3s;
+      font-family: inherit;
+    }
+
+    .date-input:hover {
+      border-color: rgba(0, 212, 255, 0.35);
+    }
+
+    .date-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .date-separator {
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .search-btn-tech {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 16px 20px;
+      border: 1px solid rgba(0, 180, 255, 0.2);
+      background: rgba(0, 60, 140, 0.3);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--cyan);
+      font-size: 17px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      letter-spacing: 1px;
+      margin-top: 8px;
+    }
+
+    .search-btn-tech:hover {
+      border-color: var(--cyan);
+      background: rgba(0, 100, 200, 0.3);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2), inset 0 0 15px rgba(0, 212, 255, 0.08);
+      transform: translateY(-2px);
+    }
+
+    /* ===== 统计卡片 ===== */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      padding: 0 0 4px;
+      flex-shrink: 0;
+    }
+
+    .stats-bar .stat-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 22px;
+      background: var(--panel);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border: 1px solid var(--panel-border);
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: statIn 0.7s ease-out both;
+    }
+
+    .stats-bar .stat-card:nth-child(1) { animation-delay: 0.15s; }
+    .stats-bar .stat-card:nth-child(2) { animation-delay: 0.25s; }
+    .stats-bar .stat-card:nth-child(3) { animation-delay: 0.35s; }
+    .stats-bar .stat-card:nth-child(4) { animation-delay: 0.45s; }
+
+    @keyframes statIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .stats-bar .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--cyan) 40%, var(--purple) 70%, transparent 100%);
+      opacity: 0.7;
+    }
+
+    .stats-bar .stat-card:hover {
+      border-color: var(--panel-border-hover);
+      background: var(--panel-hover);
+      box-shadow: 0 8px 40px rgba(0, 100, 255, 0.12), 0 0 1px rgba(0, 212, 255, 0.3);
+      transform: translateY(-3px);
+    }
+
+    .stat-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--text-bright);
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.25);
+      line-height: 1.2;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 1.5px;
+    }
+
+    .stat-value.cyan {
+      color: var(--cyan);
+      text-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+    }
+
+    .stat-value.green {
+      color: var(--green);
+      text-shadow: 0 0 20px rgba(0, 240, 200, 0.3);
+    }
+
+    .stat-value.purple {
+      color: var(--purple);
+      text-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    }
+
+    .stat-value.orange {
+      color: var(--orange);
+      text-shadow: 0 0 20px rgba(255, 159, 67, 0.3);
+    }
+
+    .stat-sub {
+      font-size: 14px;
+      color: var(--muted);
+      opacity: 0.85;
+    }
+
+    .stat-icon-wrap {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cyan-dim);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 12px;
+      color: var(--cyan);
+      flex-shrink: 0;
+      transition: all 0.35s;
+    }
+
+    .stats-bar .stat-card:hover .stat-icon-wrap {
+      background: rgba(0, 212, 255, 0.18);
+      border-color: rgba(0, 212, 255, 0.35);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+    }
+
+    /* ===== 图表容器 ===== */
+    .chart-container {
+      width: 100%;
+      height: 100%;
+      min-height: 260px;
+    }
+
+    .chart-panel {
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* ===== 表格样式 ===== */
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 15px;
+    }
+
+    .data-table th {
+      padding: 10px 8px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(0, 180, 255, 0.15);
+      background: rgba(0, 40, 100, 0.15);
+      white-space: nowrap;
+    }
+
+    .data-table th:first-child { 
+      border-radius: var(--radius-sm) 0 0 0;
+      text-align: left;
+    }
+    .data-table th:last-child { 
+      border-radius: 0 var(--radius-sm) 0 0;
+    }
+
+    .data-table td {
+      padding: 10px 8px;
+      color: var(--soft);
+      border-bottom: 1px solid rgba(0, 180, 255, 0.06);
+      text-align: center;
+      transition: background 0.25s;
+      white-space: nowrap;
+    }
+
+    .data-table td:first-child {
+      text-align: left;
+      color: var(--text-bright);
+      font-weight: 500;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(0, 150, 255, 0.06);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:last-child td:first-child { border-radius: 0 0 0 var(--radius-sm); }
+    .data-table tr:last-child td:last-child { border-radius: 0 0 var(--radius-sm) 0; }
+
+    .num { 
+      font-weight: 700; 
+      color: var(--cyan) !important; 
+      font-family: 'Orbitron', monospace; 
+      font-size: 16px; 
+    }
+
+    .highlight-row {
+      background: rgba(0, 100, 200, 0.08);
+    }
+
+    .num-total {
+      font-weight: 700;
+      color: var(--green) !important;
+      font-family: 'Orbitron', monospace;
+      font-size: 16px;
+    }
+
+    /* ===== 仪表盘样式 ===== */
+    .gauge-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .gauge-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .gauge-chart {
+      width: 160px;
+      height: 140px;
+    }
+
+    /* ===== 呼吸光晕 ===== */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(80px);
+      animation: orbBreathe 8s ease-in-out infinite;
+    }
+
+    .glow-orb.orb1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0, 100, 255, 0.08) 0%, transparent 70%);
+      top: -100px;
+      left: -100px;
+      animation-delay: 0s;
+    }
+
+    .glow-orb.orb2 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.06) 0%, transparent 70%);
+      top: 30%;
+      right: -80px;
+      animation-delay: 3s;
+    }
+
+    .glow-orb.orb3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.05) 0%, transparent 70%);
+      bottom: -50px;
+      left: 30%;
+      animation-delay: 5s;
+    }
+
+    @keyframes orbBreathe {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.15); }
+    }
+
+    /* ===== 数据流装饰线 ===== */
+    .data-flow-line {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .data-flow-line.line1 {
+      top: 15%;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(0,212,255,0.06) 20%, rgba(0,212,255,0.12) 50%, rgba(0,212,255,0.06) 80%, transparent 100%);
+      animation: flowPulse 6s ease-in-out infinite;
+    }
+
+    .data-flow-line.line2 {
+      bottom: 25%;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.05) 20%, rgba(139,92,246,0.1) 50%, rgba(139,92,246,0.05) 80%, transparent 100%);
+      animation: flowPulse 8s ease-in-out infinite;
+      animation-delay: 2s;
+    }
+
+    @keyframes flowPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* ===== 网格背景 ===== */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,180,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,180,255,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.5) 0%, transparent 75%);
+    }
+
+    /* ===== 滚动条 ===== */
+    .panel-body::-webkit-scrollbar,
+    .panel-body-no-header::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    .panel-body::-webkit-scrollbar-track,
+    .panel-body-no-header::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .panel-body::-webkit-scrollbar-thumb,
+    .panel-body-no-header::-webkit-scrollbar-thumb {
+      background: rgba(0, 180, 255, 0.2);
+      border-radius: 2px;
+    }
+
+    .panel-body::-webkit-scrollbar-thumb:hover,
+    .panel-body-no-header::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 255, 0.35);
+    }
+
+    /* ===== 响应式 ===== */
+    @media (max-width: 1400px) {
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .main {
+        grid-template-columns: 260px 1fr;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+      
+      .sidebar {
+        order: 2;
+      }
+      
+      .content-area {
+        order: 1;
+      }
+      
+      .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ===== 任务清单表格样式 ===== */
+    .task-table {
+      font-size: 13px;
+    }
+
+    .task-table th {
+      font-size: 12px;
+      padding: 8px 6px;
+      white-space: nowrap;
+    }
+
+    .task-table td {
+      padding: 8px 6px;
+      font-size: 12px;
+    }
+
+    .task-table td:nth-child(2) {
+      text-align: left;
+      max-width: 300px;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .status-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-inprogress {
+      background: rgba(0, 200, 255, 0.12);
+      color: var(--cyan);
+      border: 1px solid rgba(0, 200, 255, 0.2);
+    }
+
+    .status-inprogress::before {
+      background: var(--cyan);
+      box-shadow: 0 0 6px var(--cyan);
+    }
+
+    .status-completed {
+      background: rgba(0, 240, 200, 0.12);
+      color: var(--green);
+      border: 1px solid rgba(0, 240, 200, 0.2);
+    }
+
+    .status-completed::before {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .status-delayed {
+      background: rgba(255, 71, 87, 0.12);
+      color: var(--red);
+      border: 1px solid rgba(255, 71, 87, 0.2);
+    }
+
+    .status-delayed::before {
+      background: var(--red);
+      box-shadow: 0 0 6px var(--red);
+    }
+
+    .status-pending {
+      background: rgba(255, 159, 67, 0.12);
+      color: var(--orange);
+      border: 1px solid rgba(255, 159, 67, 0.2);
+    }
+
+    .status-pending::before {
+      background: var(--orange);
+      box-shadow: 0 0 6px var(--orange);
+    }
+
+    /* ===== 图表翻页按钮 ===== */
+    .chart-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      width: 100%;
+      height: 100%;
+    }
+
+    .chart-nav-btn {
+      width: 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 60, 140, 0.3);
+      border: 1px solid rgba(0, 180, 255, 0.2);
+      color: var(--cyan);
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .chart-nav-btn:hover {
+      background: rgba(0, 100, 200, 0.4);
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    }
+
+    .chart-nav-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* ===== 面板头部统计信息 ===== */
+    .panel-header {
+      position: relative;
+    }
+
+    .panel-header-stats {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .header-stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .header-stat-label {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.5);
+      letter-spacing: 0.5px;
+    }
+
+    .header-stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Orbitron', monospace;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bgCanvas"></canvas>
+  <div class="grid-bg"></div>
+  <div class="glow-orb orb1"></div>
+  <div class="glow-orb orb2"></div>
+  <div class="glow-orb orb3"></div>
+  <div class="data-flow-line line1"></div>
+  <div class="data-flow-line line2"></div>
+
+  <div class="page">
+    <header class="header">
+      <div class="header-time" id="headerTime">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 6v6l4 2" stroke-linecap="round"/>
+        </svg>
+        <span>2026-06-04 10:45:07</span>
+      </div>
+      <div class="header-title">
+        <h1>TIC设计交付物看板</h1>
+      </div>
+      <div class="nav-right">
+        <button class="nav-btn">中文</button>
+      </div>
+    </header>
+
+    <div class="main">
+      <aside class="sidebar">
+        <div class="panel">
+          <div class="panel-body-no-header">
+            <div class="filter-section">
+              <label class="filter-label">文件类型</label>
+              <div class="select-wrapper">
+                <select class="filter-select" id="fileTypeSelect">
+                  <option value="all">All</option>
+                  <option value="design">设计文件</option>
+                  <option value="document">文档</option>
+                  <option value="model">模型</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <label class="filter-label">完成状态</label>
+              <div class="select-wrapper">
+                <select class="filter-select" id="statusSelect">
+                  <option value="all">All</option>
+                  <option value="completed">已完成</option>
+                  <option value="inprogress">进行中</option>
+                  <option value="pending">待开始</option>
+                  <option value="delayed">延期</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <label class="filter-label">设计阶段</label>
+              <div class="select-wrapper">
+                <select class="filter-select" id="stageSelect">
+                  <option value="all">All</option>
+                  <option value="concept">概念设计</option>
+                  <option value="preliminary">初步设计</option>
+                  <option value="detailed">详细设计</option>
+                  <option value="construction">施工设计</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <label class="filter-label">版本号</label>
+              <div class="select-wrapper">
+                <select class="filter-select" id="versionSelect">
+                  <option value="all">All</option>
+                  <option value="v0">Delivery-0版本</option>
+                  <option value="va">Delivery-A版本</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="content-area">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">里程碑节点完成情况统计<span class="breathing-dot blue"></span></div>
+            <div class="panel-header-stats">
+              <div class="header-stat-item">
+                <span class="header-stat-label">总体计划完成比例</span>
+                <span class="header-stat-value" style="color: var(--green);">11.03%</span>
+              </div>
+              <div class="header-stat-item">
+                <span class="header-stat-label">总体实际完成比例</span>
+                <span class="header-stat-value" style="color: var(--cyan);">2%</span>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body-no-header">
+            <div class="chart-nav">
+              <button class="chart-nav-btn" id="milestonePrev">&lt;</button>
+              <div class="chart-container" id="completionChart"></div>
+              <button class="chart-nav-btn" id="milestoneNext">&gt;</button>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+    
+    <div class="bottom-section">
+      <div class="panel bottom-panel">
+        <div class="panel-header">
+          <div class="panel-title">统计概览<span class="breathing-dot green"></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="stats-overview-grid">
+            <div class="stat-big-card">
+              <div class="stat-big-label">已提交数量</div>
+              <div class="stat-big-value cyan" data-count="17">0</div>
+            </div>
+            <div class="stat-big-card">
+              <div class="stat-big-label">设计交付物清单总数</div>
+              <div class="stat-big-value purple" data-count="1995">0</div>
+            </div>
+            <div class="gauge-wrapper">
+              <div class="gauge-item">
+                <div class="gauge-chart" id="gauge1"></div>
+                <div class="gauge-label">STSTRA提交占比</div>
+              </div>
+              <div class="gauge-item">
+                <div class="gauge-chart" id="gauge2"></div>
+                <div class="gauge-label">文件审批占比</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel bottom-panel">
+        <div class="panel-header">
+          <div class="panel-title">各专业完成状态分布图<span class="breathing-dot orange"></span></div>
+        </div>
+        <div class="panel-body-no-header">
+          <div class="chart-container" id="professionChart"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-section full-width">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">交付物状态分布<span class="breathing-dot purple"></span></div>
+        </div>
+        <div class="panel-body">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>版本</th>
+                <th>BIM</th>
+                <th>接触网系统</th>
+                <th>场段设备</th>
+                <th>指导原则</th>
+                <th>接口集成</th>
+                <th>供电系统</th>
+                <th>项目管理</th>
+                <th>RAMS</th>
+                <th>需求管理</th>
+                <th>信号系统</th>
+                <th>电信系统</th>
+                <th>车辆</th>
+                <th>总计</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Delivery-0版本</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">17</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num-total">17</td>
+              </tr>
+              <tr>
+                <td>Delivery-A版本</td>
+                <td class="num">0</td>
+                <td class="num">13</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">0</td>
+                <td class="num">2</td>
+                <td class="num">0</td>
+                <td class="num-total">15</td>
+              </tr>
+              <tr class="highlight-row">
+                <td><strong>总计</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>13</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>17</strong></td>
+                <td class="num-total"><strong>2</strong></td>
+                <td class="num-total"><strong>0</strong></td>
+                <td class="num-total"><strong>32</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-section full-width">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">任务清单<span class="breathing-dot cyan"></span></div>
+        </div>
+        <div class="panel-body">
+          <table class="data-table task-table">
+            <thead>
+              <tr>
+                <th>文件编号</th>
+                <th>交付物名称</th>
+                <th>文件类型</th>
+                <th>设计阶段</th>
+                <th>版本号</th>
+                <th>要求完成时间</th>
+                <th>完成比例</th>
+                <th>实际完成时间</th>
+                <th>完成状态</th>
+              </tr>
+            </thead>
+            <tbody id="taskListBody">
+              <tr data-filetype="model" data-status="inprogress" data-stage="detailed" data-version="v1">
+                <td>99-999-9999/6-P99-002</td>
+                <td>ENERGIA MT - PLANTA DE LOCAÇÃO DAS ESTRUTURAS - TRECHO III A</td>
+                <td>模型</td>
+                <td>详细设计</td>
+                <td>V1.0</td>
+                <td>2026-07-17</td>
+                <td class="num">60%</td>
+                <td>--</td>
+                <td><span class="status-badge status-inprogress">进行中</span></td>
+              </tr>
+              <tr data-filetype="design" data-status="completed" data-stage="detailed" data-version="v1">
+                <td>99-999-9999/6-Z99-001</td>
+                <td>ENERGIA MT - MODELO BIM - LOCAÇÃO DE POSTES - TRECHO III</td>
+                <td>设计文件</td>
+                <td>详细设计</td>
+                <td>V1.0</td>
+                <td>2026-06-10</td>
+                <td class="num">100%</td>
+                <td>2026-06-08</td>
+                <td><span class="status-badge status-completed">已完成</span></td>
+              </tr>
+              <tr data-filetype="document" data-status="delayed" data-stage="preliminary" data-version="v0">
+                <td>99-999-9999/6-Z99-001</td>
+                <td>ENERGIA MT - LISTA DE CABOS - TRECHO III</td>
+                <td>文档</td>
+                <td>初步设计</td>
+                <td>V0.5</td>
+                <td>2026-05-20</td>
+                <td class="num">30%</td>
+                <td>--</td>
+                <td><span class="status-badge status-delayed">延期未完成</span></td>
+              </tr>
+              <tr data-filetype="design" data-status="inprogress" data-stage="construction" data-version="v1">
+                <td>99-999-9999/6-P99-002</td>
+                <td>ENERGIA MT - LISTA DE MATERIAIS - TRECHO III</td>
+                <td>设计文件</td>
+                <td>施工设计</td>
+                <td>V1.0</td>
+                <td>2026-08-01</td>
+                <td class="num">75%</td>
+                <td>--</td>
+                <td><span class="status-badge status-inprogress">进行中</span></td>
+              </tr>
+              <tr data-filetype="model" data-status="pending" data-stage="concept" data-version="v0">
+                <td>99-999-9999/6-Z99-001</td>
+                <td>ENERGIA MT - DETALHE TÍPICO DAS ESTRUTURAS DA REDE DE MÉDIA TENSÃO - TRECHO III</td>
+                <td>模型</td>
+                <td>概念设计</td>
+                <td>V0.1</td>
+                <td>2026-09-15</td>
+                <td class="num">0%</td>
+                <td>--</td>
+                <td><span class="status-badge status-pending">待开始</span></td>
+              </tr>
+              <tr data-filetype="document" data-status="completed" data-stage="detailed" data-version="va">
+                <td>99-999-9999/6-A99-003</td>
+                <td>SINALIZAÇÃO - PLANO DE SINALIZAÇÃO FERROVIÁRIA - TRECHO I</td>
+                <td>文档</td>
+                <td>详细设计</td>
+                <td>VA.0</td>
+                <td>2026-06-01</td>
+                <td class="num">100%</td>
+                <td>2026-05-28</td>
+                <td><span class="status-badge status-completed">已完成</span></td>
+              </tr>
+              <tr data-filetype="design" data-status="delayed" data-stage="construction" data-version="v1">
+                <td>99-999-9999/6-B99-004</td>
+                <td>TELECOMUNICAÇÕES - PROJETO DE REDE DE FIBRA ÓPTICA</td>
+                <td>设计文件</td>
+                <td>施工设计</td>
+                <td>V1.2</td>
+                <td>2026-04-30</td>
+                <td class="num">45%</td>
+                <td>--</td>
+                <td><span class="status-badge status-delayed">延期未完成</span></td>
+              </tr>
+              <tr data-filetype="model" data-status="inprogress" data-stage="preliminary" data-version="v0">
+                <td>99-999-9999/6-C99-005</td>
+                <td>CATENÁRIA - MODELO 3D DE ESTRUTURAS DE SUSPENSÃO</td>
+                <td>模型</td>
+                <td>初步设计</td>
+                <td>V0.8</td>
+                <td>2026-07-30</td>
+                <td class="num">55%</td>
+                <td>--</td>
+                <td><span class="status-badge status-inprogress">进行中</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function updateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const timeStr = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+      document.getElementById('headerTime').querySelector('span').textContent = timeStr;
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    function animateCounters() {
+      const counters = document.querySelectorAll('[data-count]');
+      counters.forEach(el => {
+        const target = parseInt(el.getAttribute('data-count'));
+        if (isNaN(target) || target === 0) return;
+        const duration = 1800;
+        const startTime = performance.now();
+        function step(currentTime) {
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = 1 - Math.pow(1 - progress, 3);
+          const current = Math.round(eased * target);
+          el.textContent = current.toLocaleString();
+          if (progress < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }
+    setTimeout(animateCounters, 400);
+
+    (function() {
+      const canvas = document.getElementById('bgCanvas');
+      const ctx = canvas.getContext('2d');
+      let w, h;
+      let particles = [];
+      let lines = [];
+      const PARTICLE_COUNT = 50;
+      const LINE_COUNT = 6;
+
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      resize();
+      window.addEventListener('resize', resize);
+
+      function createParticle() {
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.3 + 0.1,
+          pulse: Math.random() * Math.PI * 2,
+          pulseSpeed: Math.random() * 0.01 + 0.005
+        };
+      }
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        particles.push(createParticle());
+      }
+
+      function createLine() {
+        const isHorizontal = Math.random() > 0.5;
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          length: Math.random() * 200 + 100,
+          speed: Math.random() * 0.5 + 0.2,
+          alpha: Math.random() * 0.08 + 0.02,
+          horizontal: isHorizontal,
+          progress: Math.random()
+        };
+      }
+
+      for (let i = 0; i < LINE_COUNT; i++) {
+        lines.push(createLine());
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.pulse += p.pulseSpeed;
+
+          if (p.x < 0) p.x = w;
+          if (p.x > w) p.x = 0;
+          if (p.y < 0) p.y = h;
+          if (p.y > h) p.y = 0;
+
+          const currentAlpha = p.alpha * (0.5 + 0.5 * Math.sin(p.pulse));
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 200, 255, ${currentAlpha})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(0, 200, 255, ${currentAlpha * 0.15})`;
+          ctx.fill();
+        });
+
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 150) {
+              const lineAlpha = (1 - dist / 150) * 0.06;
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(0, 180, 255, ${lineAlpha})`;
+              ctx.lineWidth = 0.5;
+              ctx.stroke();
+            }
+          }
+        }
+
+        lines.forEach(l => {
+          l.progress += l.speed * 0.002;
+          if (l.progress > 1) l.progress = 0;
+
+          const alpha = l.alpha * Math.sin(l.progress * Math.PI);
+          ctx.beginPath();
+
+          if (l.horizontal) {
+            const startX = l.x - l.length / 2;
+            const endX = l.x + l.length / 2;
+            const grad = ctx.createLinearGradient(startX, l.y, endX, l.y);
+            grad.addColorStop(0, `rgba(0, 180, 255, 0)`);
+            grad.addColorStop(0.5, `rgba(0, 180, 255, ${alpha})`);
+            grad.addColorStop(1, `rgba(0, 180, 255, 0)`);
+            ctx.strokeStyle = grad;
+            ctx.moveTo(startX, l.y);
+            ctx.lineTo(endX, l.y);
+          } else {
+            const startY = l.y - l.length / 2;
+            const endY = l.y + l.length / 2;
+            const grad = ctx.createLinearGradient(l.x, startY, l.x, endY);
+            grad.addColorStop(0, `rgba(0, 180, 255, 0)`);
+            grad.addColorStop(0.5, `rgba(0, 180, 255, ${alpha})`);
+            grad.addColorStop(1, `rgba(0, 180, 255, 0)`);
+            ctx.strokeStyle = grad;
+            ctx.moveTo(l.x, startY);
+            ctx.lineTo(l.x, endY);
+          }
+
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        });
+
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+    })();
+
+    setTimeout(() => {
+      initCharts();
+    }, 600);
+
+    function initCharts() {
+      const completionChart = echarts.init(document.getElementById('completionChart'));
+      const professionChart = echarts.init(document.getElementById('professionChart'));
+      const gauge1 = echarts.init(document.getElementById('gauge1'));
+      const gauge2 = echarts.init(document.getElementById('gauge2'));
+
+      window.addEventListener('resize', () => {
+        completionChart.resize();
+        professionChart.resize();
+        gauge1.resize();
+        gauge2.resize();
+      });
+
+      const completionOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          },
+          backgroundColor: 'rgba(6, 18, 48, 0.95)',
+          borderColor: 'rgba(0, 212, 255, 0.2)',
+          borderWidth: 1,
+          textStyle: {
+            color: '#eaf4ff'
+          }
+        },
+        legend: {
+          data: ['计划完成比例', '实际完成比例'],
+          textStyle: {
+            color: '#a3ccec'
+          },
+          top: 15,
+          left: 'center'
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '12%',
+          top: 45,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['RDA001', 'RDA002', 'TEL001', 'TEL002', 'SIN001', 'SIN002', 'ENB001-018', 'ENB019'],
+          axisLine: {
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.2)'
+            }
+          },
+          axisLabel: {
+            color: '#6b9ec4',
+            fontSize: 11
+          },
+          axisTick: {
+            show: false
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '完成比例',
+          nameTextStyle: {
+            color: '#6b9ec4',
+            fontSize: 11
+          },
+          min: 0,
+          max: 100,
+          interval: 20,
+          axisLine: {
+            show: false
+          },
+          axisLabel: {
+            color: '#6b9ec4',
+            fontSize: 10,
+            formatter: '{value}%'
+          },
+          splitLine: {
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.08)',
+              type: 'dashed'
+            }
+          }
+        },
+        series: [
+          {
+            name: '计划完成比例',
+            type: 'bar',
+            data: [0, 0, 19.02, 0, 62.5, 22.22, 0, 0],
+            barWidth: '22%',
+            itemStyle: {
+              color: '#00e5b8',
+              borderRadius: [4, 4, 0, 0],
+              shadowColor: 'rgba(0, 229, 184, 0.5)',
+              shadowBlur: 15,
+              shadowOffsetY: 3,
+              borderColor: '#00ffd7',
+              borderWidth: 1
+            },
+            label: {
+              show: true,
+              position: 'top',
+              color: '#00e5b8',
+              fontSize: 11,
+              formatter: '{c}%',
+              fontWeight: 'bold'
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut'
+          },
+          {
+            name: '实际完成比例',
+            type: 'bar',
+            data: [0, 0, 0, 0, 46.88, 22.22, 0, 0],
+            barWidth: '22%',
+            itemStyle: {
+              color: '#00c8ff',
+              borderRadius: [4, 4, 0, 0],
+              shadowColor: 'rgba(0, 200, 255, 0.5)',
+              shadowBlur: 15,
+              shadowOffsetY: 3,
+              borderColor: '#00e0ff',
+              borderWidth: 1
+            },
+            label: {
+              show: true,
+              position: 'top',
+              color: '#00c8ff',
+              fontSize: 11,
+              formatter: '{c}%',
+              fontWeight: 'bold'
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut',
+            animationDelay: 300
+          }
+        ]
+      };
+
+      const professionOption = {
+        backgroundColor: 'transparent',
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          },
+          backgroundColor: 'rgba(6, 18, 48, 0.95)',
+          borderColor: 'rgba(0, 212, 255, 0.2)',
+          borderWidth: 1,
+          textStyle: {
+            color: '#eaf4ff'
+          }
+        },
+        legend: {
+          data: [
+            { name: '完成', icon: 'circle' },
+            { name: '进行中', icon: 'circle' },
+            { name: '延期未完成', icon: 'circle' },
+            { name: '延期已完成', icon: 'circle' }
+          ],
+          textStyle: {
+            color: '#a3ccec',
+            fontSize: 13
+          },
+          top: 8,
+          left: 'center',
+          itemWidth: 12,
+          itemHeight: 12,
+          itemGap: 20
+        },
+        grid: {
+          left: '1%',
+          right: '8%',
+          bottom: '12%',
+          top: 54,
+          containLabel: true
+        },
+        xAxis: {
+          type: 'value',
+          name: '数量',
+          nameTextStyle: {
+            color: '#8bb8dc',
+            fontSize: 13,
+            fontWeight: 'bold',
+            padding: [20, 0, 0, 0]
+          },
+          nameLocation: 'end',
+          nameGap: 35,
+          axisLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.35)'
+            }
+          },
+          axisLabel: {
+            color: '#8bb8dc',
+            fontSize: 12,
+            fontWeight: 'bold',
+            margin: 8
+          },
+          axisTick: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.3)'
+            },
+            length: 6
+          },
+          splitLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.08)',
+              type: 'dashed'
+            }
+          },
+          min: 0,
+          max: 1000,
+          interval: 200
+        },
+        yAxis: {
+          type: 'category',
+          data: ['BIM', '接触网系统', '供电系统', '信号系统', '电信系统'],
+          axisLine: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.25)'
+            }
+          },
+          axisLabel: {
+            color: '#8bb8dc',
+            fontSize: 14,
+            fontWeight: 'bold'
+          },
+          axisTick: {
+            show: true,
+            lineStyle: {
+              color: 'rgba(0, 180, 255, 0.2)'
+            }
+          }
+        },
+        series: [
+          {
+            name: '完成',
+            type: 'bar',
+            stack: 'total',
+            data: [0, 0, 0, 0, 0],
+            barWidth: '55%',
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                { offset: 0, color: '#00ffd7' },
+                { offset: 0.5, color: '#00e5b8' },
+                { offset: 1, color: '#00b38c' }
+              ]),
+              borderRadius: [4, 4, 4, 4],
+              shadowColor: 'rgba(0, 229, 184, 0.6)',
+              shadowBlur: 15,
+              shadowOffsetX: 3,
+              shadowOffsetY: 3,
+              borderColor: '#00ffd7',
+              borderWidth: 2
+            },
+            label: {
+              show: true,
+              position: 'inside',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowBlur: 4,
+              formatter: function(params) {
+                return params.value > 0 ? params.value : '';
+              }
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut'
+          },
+          {
+            name: '延期未完成',
+            type: 'bar',
+            stack: 'total',
+            data: [0, 0, 0, 0, 74],
+            barWidth: '55%',
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                { offset: 0, color: '#ff6b7a' },
+                { offset: 0.5, color: '#ff4757' },
+                { offset: 1, color: '#cc3945' }
+              ]),
+              borderRadius: [4, 4, 4, 4],
+              shadowColor: 'rgba(255, 71, 87, 0.6)',
+              shadowBlur: 15,
+              shadowOffsetX: 3,
+              shadowOffsetY: 3,
+              borderColor: '#ff6b7a',
+              borderWidth: 2
+            },
+            label: {
+              show: true,
+              position: 'inside',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowBlur: 4,
+              formatter: function(params) {
+                return params.value > 0 ? params.value : '';
+              }
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut',
+            animationDelay: 150
+          },
+          {
+            name: '进行中',
+            type: 'bar',
+            stack: 'total',
+            data: [0, 71, 935, 87, 825],
+            barWidth: '55%',
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                { offset: 0, color: '#00e0ff' },
+                { offset: 0.5, color: '#00c8ff' },
+                { offset: 1, color: '#00a0cc' }
+              ]),
+              borderRadius: [4, 4, 4, 4],
+              shadowColor: 'rgba(0, 200, 255, 0.6)',
+              shadowBlur: 15,
+              shadowOffsetX: 3,
+              shadowOffsetY: 3,
+              borderColor: '#00e0ff',
+              borderWidth: 2
+            },
+            label: {
+              show: true,
+              position: 'inside',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowBlur: 4,
+              formatter: function(params) {
+                return params.value > 0 ? params.value : '';
+              }
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut',
+            animationDelay: 300
+          },
+          {
+            name: '延期已完成',
+            type: 'bar',
+            stack: 'total',
+            data: [0, 0, 0, 0, 0],
+            barWidth: '55%',
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                { offset: 0, color: '#ffb86c' },
+                { offset: 0.5, color: '#ff9f43' },
+                { offset: 1, color: '#cc7f36' }
+              ]),
+              borderRadius: [4, 4, 4, 4],
+              shadowColor: 'rgba(255, 159, 67, 0.6)',
+              shadowBlur: 15,
+              shadowOffsetX: 3,
+              shadowOffsetY: 3,
+              borderColor: '#ffb86c',
+              borderWidth: 2
+            },
+            label: {
+              show: true,
+              position: 'inside',
+              color: '#fff',
+              fontSize: 12,
+              fontWeight: 'bold',
+              textShadowColor: 'rgba(0, 0, 0, 0.5)',
+              textShadowBlur: 4,
+              formatter: function(params) {
+                return params.value > 0 ? params.value : '';
+              }
+            },
+            animationDuration: 1500,
+            animationEasing: 'elasticOut',
+            animationDelay: 450
+          }
+        ]
+      };
+
+      const gaugeOption1 = {
+        backgroundColor: 'transparent',
+        series: [
+          {
+            type: 'gauge',
+            startAngle: 200,
+            endAngle: -20,
+            center: ['50%', '72%'],
+            radius: '92%',
+            min: 0,
+            max: 100,
+            splitNumber: 10,
+            axisLine: {
+              lineStyle: {
+                width: 14,
+                color: [
+                  [0.1103, new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: '#00f0c8' },
+                    { offset: 1, color: '#00d4ff' }
+                  ])],
+                  [1, 'rgba(0, 180, 255, 0.08)']
+                ]
+              }
+            },
+            pointer: {
+              show: false
+            },
+            axisTick: {
+              show: false
+            },
+            splitLine: {
+              show: false
+            },
+            axisLabel: {
+              show: false
+            },
+            detail: {
+              show: true,
+              valueAnimation: true,
+              formatter: '{value}%',
+              color: '#00f0c8',
+              fontSize: 24,
+              fontWeight: 'bold',
+              offsetCenter: [0, 0],
+              textShadowColor: 'rgba(0, 240, 200, 0.8)',
+              textShadowBlur: 12
+            },
+            data: [{ value: 11.03 }]
+          }
+        ]
+      };
+
+      const gaugeOption2 = {
+        backgroundColor: 'transparent',
+        series: [
+          {
+            type: 'gauge',
+            startAngle: 200,
+            endAngle: -20,
+            center: ['50%', '72%'],
+            radius: '92%',
+            min: 0,
+            max: 100,
+            splitNumber: 10,
+            axisLine: {
+              lineStyle: {
+                width: 14,
+                color: [
+                  [0.02, new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: '#d8b4fe' },
+                    { offset: 0.5, color: '#a78bfa' },
+                    { offset: 1, color: '#7c3aed' }
+                  ])],
+                  [1, 'rgba(139, 92, 246, 0.08)']
+                ]
+              }
+            },
+            pointer: {
+              show: false
+            },
+            axisTick: {
+              show: false
+            },
+            splitLine: {
+              show: false
+            },
+            axisLabel: {
+              show: false
+            },
+            detail: {
+              show: true,
+              valueAnimation: true,
+              formatter: '{value}%',
+              color: '#a78bfa',
+              fontSize: 24,
+              fontWeight: 'bold',
+              offsetCenter: [0, 0],
+              textShadowColor: 'rgba(167, 139, 250, 0.8)',
+              textShadowBlur: 12
+            },
+            data: [{ value: 2 }]
+          }
+        ]
+      };
+
+      completionChart.setOption(completionOption);
+      professionChart.setOption(professionOption);
+      gauge1.setOption(gaugeOption1);
+      gauge2.setOption(gaugeOption2);
+
+      // 任务清单筛选功能
+      function filterTaskList() {
+        const fileType = document.getElementById('fileTypeSelect').value;
+        const status = document.getElementById('statusSelect').value;
+        const stage = document.getElementById('stageSelect').value;
+        const version = document.getElementById('versionSelect').value;
+        
+        const rows = document.querySelectorAll('#taskListBody tr');
+        rows.forEach(row => {
+          const rowFileType = row.getAttribute('data-filetype');
+          const rowStatus = row.getAttribute('data-status');
+          const rowStage = row.getAttribute('data-stage');
+          const rowVersion = row.getAttribute('data-version');
+          
+          const matchFileType = fileType === 'all' || rowFileType === fileType;
+          const matchStatus = status === 'all' || rowStatus === status;
+          const matchStage = stage === 'all' || rowStage === stage;
+          const matchVersion = version === 'all' || rowVersion === version;
+          
+          if (matchFileType && matchStatus && matchStage && matchVersion) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        });
+      }
+      
+      document.getElementById('fileTypeSelect').addEventListener('change', filterTaskList);
+      document.getElementById('statusSelect').addEventListener('change', filterTaskList);
+      document.getElementById('stageSelect').addEventListener('change', filterTaskList);
+      document.getElementById('versionSelect').addEventListener('change', filterTaskList);
+
+      // 里程碑图表翻页功能
+      const milestoneData = [
+        { name: 'RDA001', plan: 0, actual: 0 },
+        { name: 'RDA002', plan: 0, actual: 0 },
+        { name: 'TEL001', plan: 19.02, actual: 0 },
+        { name: 'TEL002', plan: 0, actual: 0 },
+        { name: 'SIN001', plan: 62.5, actual: 46.88 },
+        { name: 'SIN002', plan: 22.22, actual: 22.22 },
+        { name: 'ENB001-018', plan: 0, actual: 0 },
+        { name: 'ENB019', plan: 0, actual: 0 },
+        { name: 'RAM001', plan: 35.5, actual: 20.0 },
+        { name: 'RAM002', plan: 48.0, actual: 30.5 },
+        { name: 'INT001', plan: 15.0, actual: 10.0 },
+        { name: 'INT002', plan: 25.0, actual: 18.0 }
+      ];
+      
+      let currentPage = 0;
+      const itemsPerPage = 6;
+      const totalPages = Math.ceil(milestoneData.length / itemsPerPage);
+      
+      function updateMilestoneChart() {
+        const start = currentPage * itemsPerPage;
+        const end = Math.min(start + itemsPerPage, milestoneData.length);
+        const pageData = milestoneData.slice(start, end);
+        
+        completionChart.setOption({
+          xAxis: {
+            data: pageData.map(item => item.name)
+          },
+          series: [
+            {
+              data: pageData.map(item => item.plan)
+            },
+            {
+              data: pageData.map(item => item.actual)
+            }
+          ]
+        });
+      }
+      
+      // 添加翻页按钮事件
+      document.getElementById('milestonePrev').addEventListener('click', () => {
+        if (currentPage > 0) {
+          currentPage--;
+          updateMilestoneChart();
+        }
+      });
+      
+      document.getElementById('milestoneNext').addEventListener('click', () => {
+        if (currentPage < totalPages - 1) {
+          currentPage++;
+          updateMilestoneChart();
+        }
+      });
+    }
+  </script>
+</body>
+</html>

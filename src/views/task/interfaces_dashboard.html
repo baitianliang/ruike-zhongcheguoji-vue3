@@ -1,0 +1,791 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIC接口管理</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: #333;
+            font-family: Arial, sans-serif;
+            padding: 10px;
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 15px 30px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ddd;
+        }
+
+        .header-title {
+            color: #ff0000;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .header-time {
+            color: #333;
+            font-size: 16px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            grid-template-rows: auto auto;
+            gap: 10px;
+        }
+
+        .card {
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .card-title {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .pie-chart-wrapper {
+            flex: 1 1 0;
+            min-width: 320px;
+            height: 320px;
+        }
+
+        .legend {
+            margin-left: 20px;
+            font-size: 14px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            margin-right: 10px;
+            border: 1px solid #999;
+        }
+
+        .legend-text {
+            width: 140px;
+        }
+
+        .legend-value {
+            width: 50px;
+            text-align: right;
+        }
+
+        .legend-percent {
+            width: 60px;
+            text-align: right;
+        }
+
+        .bottom-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .extra-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            grid-column: 1 / -1;
+        }
+
+        .line-chart-wrapper {
+            width: 100%;
+            height: 300px;
+        }
+
+        .bottom-chart-wrapper {
+            flex: 1 1 0;
+            min-width: 220px;
+            height: 240px;
+        }
+
+        .bottom-row .card {
+            padding: 10px;
+        }
+
+        .bottom-row .chart-container {
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .bottom-row .bottom-chart-wrapper {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 245px;
+        }
+
+        .bottom-row .legend {
+            margin-left: auto;
+            flex: 0 0 235px;
+            font-size: 12px;
+        }
+
+        .bottom-row .legend-text {
+            width: 108px;
+        }
+
+        .bottom-row .legend-value {
+            width: 40px;
+        }
+
+        .bottom-row .legend-percent {
+            width: 48px;
+        }
+
+        .bar-chart-wrapper {
+            width: 100%;
+            height: 220px;
+        }
+
+        .extra-row .chart-container {
+            justify-content: space-between;
+            align-items: stretch;
+            gap: 8px;
+        }
+
+        .extra-row .bottom-chart-wrapper {
+            flex: 1 1 auto;
+            min-width: 0;
+            height: 245px;
+        }
+
+        .extra-row .legend {
+            margin-left: auto;
+            flex: 0 0 228px;
+            font-size: 12px;
+        }
+
+        .extra-row .legend-text {
+            width: 108px;
+        }
+
+        .extra-row .legend-value {
+            width: 40px;
+        }
+
+        .extra-row .legend-percent {
+            width: 48px;
+        }
+
+        @media (max-width: 1680px) {
+            .bottom-row .legend {
+                flex-basis: 215px;
+            }
+
+            .extra-row .legend {
+                flex-basis: 210px;
+            }
+        }
+
+        @media (max-width: 1440px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .line-chart-wrapper {
+                height: 280px;
+            }
+
+            .pie-chart-wrapper {
+                min-width: 280px;
+                height: 280px;
+            }
+
+            .bottom-row,
+            .extra-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .bottom-row .legend,
+            .extra-row .legend {
+                flex-basis: 200px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .header-title {
+                font-size: 18px;
+            }
+
+            .header-time {
+                font-size: 14px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+
+            .card-title {
+                font-size: 16px;
+                margin-bottom: 10px;
+            }
+
+            .chart-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .pie-chart-wrapper,
+            .bottom-chart-wrapper {
+                min-width: 0;
+                width: 100%;
+                max-width: 340px;
+                height: 220px;
+            }
+
+            .bottom-row,
+            .extra-row {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-row .legend,
+            .extra-row .legend,
+            .legend {
+                flex: 0 0 auto;
+                width: 100%;
+                margin-left: 0;
+                font-size: 12px;
+            }
+
+            .legend-text {
+                width: 120px;
+            }
+
+            .legend-value {
+                width: 42px;
+            }
+
+            .legend-percent {
+                width: 52px;
+            }
+
+            .bar-chart-wrapper {
+                height: 200px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 6px;
+            }
+
+            .card {
+                padding: 10px;
+            }
+
+            .line-chart-wrapper {
+                height: 240px;
+            }
+
+            .bar-chart-wrapper {
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">TIC接口管理</div>
+        <div class="header-time" id="currentTime"></div>
+    </div>
+
+    <div class="dashboard">
+        <div class="card">
+            <div class="card-title">Interfaces by Status</div>
+            <div class="chart-container">
+                <div class="pie-chart-wrapper">
+                    <canvas id="statusPie"></canvas>
+                </div>
+                <div class="legend" id="statusLegend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #6c757d;"></div>
+                        <span class="legend-text">Creating</span>
+                        <span class="legend-value">50</span>
+                        <span class="legend-percent">10.0%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #1e88e5;"></div>
+                        <span class="legend-text">System release</span>
+                        <span class="legend-value">80</span>
+                        <span class="legend-percent">16.0%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #00acc1;"></div>
+                        <span class="legend-text">System update</span>
+                        <span class="legend-value">65</span>
+                        <span class="legend-percent">13.0%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #fb8c00;"></div>
+                        <span class="legend-text">Civil handover</span>
+                        <span class="legend-value">45</span>
+                        <span class="legend-percent">9.0%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #8e24aa;"></div>
+                        <span class="legend-text">Processing</span>
+                        <span class="legend-value">120</span>
+                        <span class="legend-percent">23.9%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #43a047;"></div>
+                        <span class="legend-text">Closed</span>
+                        <span class="legend-value">90</span>
+                        <span class="legend-percent">18.0%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background-color: #e53935;"></div>
+                        <span class="legend-text">Cancel</span>
+                        <span class="legend-value">51</span>
+                        <span class="legend-percent">10.1%</span>
+                    </div>
+                    <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;">
+                        <div class="legend-color" style="background-color: #333;"></div>
+                        <span class="legend-text">TOTAL</span>
+                        <span class="legend-value">501</span>
+                        <span class="legend-percent">100.0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Interfaces by Status per Week</div>
+            <div class="line-chart-wrapper">
+                <canvas id="statusLine"></canvas>
+            </div>
+        </div>
+
+        <div class="bottom-row">
+            <div class="card">
+                <div class="card-title">Interfaces by CCO</div>
+                <div class="chart-container">
+                    <div class="bottom-chart-wrapper">
+                        <canvas id="typePie"></canvas>
+                    </div>
+                    <div class="legend" id="typeLegend">
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Creating</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System release</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System update</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Civil handover</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Processing</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Closed</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Cancel</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;"><div class="legend-color" style="background-color:#333"></div><span class="legend-text">TOTAL</span><span class="legend-value"></span><span class="legend-percent">100.0%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Interfaces by ESTAÇÃO</div>
+                <div class="chart-container">
+                    <div class="bottom-chart-wrapper">
+                        <canvas id="leadPie"></canvas>
+                    </div>
+                    <div class="legend" id="leadLegend">
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Creating</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System release</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System update</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Civil handover</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Processing</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Closed</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Cancel</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;"><div class="legend-color" style="background-color:#333"></div><span class="legend-text">TOTAL</span><span class="legend-value"></span><span class="legend-percent">100.0%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Interfaces by INFRA</div>
+                <div class="chart-container">
+                    <div class="bottom-chart-wrapper">
+                        <canvas id="participatingPie"></canvas>
+                    </div>
+                    <div class="legend" id="participatingLegend">
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Creating</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System release</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System update</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Civil handover</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Processing</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Closed</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Cancel</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;"><div class="legend-color" style="background-color:#333"></div><span class="legend-text">TOTAL</span><span class="legend-value"></span><span class="legend-percent">100.0%</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="extra-row">
+            <div class="card">
+                <div class="card-title">Interfaces by PÁTIOS DE MANUTENÇÃO</div>
+                <div class="chart-container">
+                    <div class="bottom-chart-wrapper">
+                        <canvas id="extraPie1"></canvas>
+                    </div>
+                    <div class="legend" id="extra1Legend">
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Creating</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System release</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System update</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Civil handover</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Processing</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Closed</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Cancel</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;"><div class="legend-color" style="background-color:#333"></div><span class="legend-text">TOTAL</span><span class="legend-value"></span><span class="legend-percent">100.0%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Interfaces by SUBESTAÇÃO</div>
+                <div class="chart-container">
+                    <div class="bottom-chart-wrapper">
+                        <canvas id="extraPie2"></canvas>
+                    </div>
+                    <div class="legend" id="extra2Legend">
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Creating</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System release</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">System update</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Civil handover</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Processing</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Closed</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item"><div class="legend-color"></div><span class="legend-text">Cancel</span><span class="legend-value"></span><span class="legend-percent"></span></div>
+                        <div class="legend-item" style="border-top: 1px solid #999; padding-top: 5px; margin-top: 5px;"><div class="legend-color" style="background-color:#333"></div><span class="legend-text">TOTAL</span><span class="legend-value"></span><span class="legend-percent">100.0%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Interfaces by Design Phase</div>
+                <div class="bar-chart-wrapper">
+                    <canvas id="designPhaseBar"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        updateTime();
+        setInterval(updateTime, 1000);
+
+        const statusColors = ['#6c757d', '#1e88e5', '#00acc1', '#fb8c00', '#8e24aa', '#43a047', '#e53935'];
+        const statusLabels = ['Creating', 'System release', 'System update', 'Civil handover', 'Processing', 'Closed', 'Cancel'];
+        const statusData = [50, 80, 65, 45, 120, 90, 51];
+
+        const pie3DOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            elements: {
+                arc: {
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }
+            },
+            layout: {
+                padding: 10
+            }
+        };
+
+        new Chart(document.getElementById('statusPie'), {
+            type: 'pie',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: statusColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff',
+                    hoverOffset: 8
+                }]
+            },
+            options: pie3DOptions
+        });
+
+        const weeks = ['2/16/2025', '3/2/2025', '3/16/2025', '3/30/2025', '4/13/2025', '4/27/2025', '5/11/2025', '5/25/2025', '6/8/2025', '6/22/2025', '7/6/2025', '7/20/2025', '8/3/2025', '8/17/2025', '8/31/2025', '9/14/2025', '9/28/2025', '10/12/2025', '10/26/2025', '11/9/2025', '11/23/2025', '12/7/2025', '12/21/2025', '1/4/2026', '1/18/2026', '2/1/2026', '2/15/2026', '3/1/2026', '3/15/2026', '3/29/2026', '4/12/2026', 'Current'];
+
+        new Chart(document.getElementById('statusLine'), {
+            type: 'line',
+            data: {
+                labels: weeks,
+                datasets: [
+                    {
+                        label: 'Creating',
+                        data: [20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 175],
+                        borderColor: '#6c757d',
+                        backgroundColor: '#6c757d',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'System release',
+                        data: [10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165],
+                        borderColor: '#1e88e5',
+                        backgroundColor: '#1e88e5',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'System update',
+                        data: [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160],
+                        borderColor: '#00acc1',
+                        backgroundColor: '#00acc1',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Civil handover',
+                        data: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155],
+                        borderColor: '#fb8c00',
+                        backgroundColor: '#fb8c00',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Processing',
+                        data: [30, 35, 40, 50, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300, 320, 340, 360, 380, 400, 420, 440, 460, 480, 500, 520, 540, 560, 580, 600],
+                        borderColor: '#8e24aa',
+                        backgroundColor: '#8e24aa',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Closed',
+                        data: [0, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150],
+                        borderColor: '#43a047',
+                        backgroundColor: '#43a047',
+                        pointRadius: 2,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Cancel',
+                        data: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155],
+                        borderColor: '#e53935',
+                        backgroundColor: '#e53935',
+                        pointRadius: 2,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: '#333', font: { size: 11 }, boxWidth: 15 }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#333', font: { size: 9 }, maxRotation: 45 },
+                        grid: { color: '#ddd' }
+                    },
+                    y: {
+                        ticks: { color: '#333', font: { size: 10 } },
+                        grid: { color: '#ddd' },
+                        max: 500
+                    }
+                }
+            }
+        });
+
+        const typeData = [72, 41, 96, 55, 133, 68, 37];
+        const leadData = [28, 104, 57, 89, 76, 142, 33];
+        const participatingData = [61, 83, 47, 92, 58, 109, 74];
+        const extra1Data = [39, 67, 121, 44, 88, 95, 53];
+        const extra2Data = [85, 52, 73, 36, 97, 64, 118];
+
+        const typeColors = ['#d32f2f', '#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#00838f', '#5d4037'];
+        const leadColors = ['#ffb300', '#3949ab', '#00897b', '#f4511e', '#8e24aa', '#7cb342', '#546e7a'];
+        const participatingColors = ['#ec407a', '#ab47bc', '#ffca28', '#42a5f5', '#ef5350', '#26a69a', '#7cb342'];
+        const extra1Colors = ['#f4511e', '#1e88e5', '#00acc1', '#8e24aa', '#e53935', '#fdd835', '#43a047'];
+        const extra2Colors = ['#ff7043', '#5c6bc0', '#9ccc65', '#ffb74d', '#4db6ac', '#a1887f', '#ba68c8'];
+
+        function applyLegendData(legendId, colors, data) {
+            const legend = document.getElementById(legendId);
+            if (!legend) return;
+            const items = legend.querySelectorAll('.legend-item');
+            const total = data.reduce((sum, value) => sum + value, 0);
+
+            data.forEach((value, index) => {
+                const item = items[index];
+                item.querySelector('.legend-color').style.backgroundColor = colors[index];
+                item.querySelector('.legend-value').textContent = value;
+                item.querySelector('.legend-percent').textContent = ((value / total) * 100).toFixed(1) + '%';
+            });
+
+            const totalItem = items[data.length];
+            totalItem.querySelector('.legend-value').textContent = total;
+            totalItem.querySelector('.legend-percent').textContent = '100.0%';
+        }
+
+        new Chart(document.getElementById('typePie'), {
+            type: 'pie',
+            data: { labels: statusLabels, datasets: [{ data: typeData, backgroundColor: typeColors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 8 }] },
+            options: pie3DOptions
+        });
+
+        new Chart(document.getElementById('leadPie'), {
+            type: 'pie',
+            data: { labels: statusLabels, datasets: [{ data: leadData, backgroundColor: leadColors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 8 }] },
+            options: pie3DOptions
+        });
+
+        new Chart(document.getElementById('participatingPie'), {
+            type: 'pie',
+            data: { labels: statusLabels, datasets: [{ data: participatingData, backgroundColor: participatingColors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 8 }] },
+            options: pie3DOptions
+        });
+
+        new Chart(document.getElementById('extraPie1'), {
+            type: 'pie',
+            data: { labels: statusLabels, datasets: [{ data: extra1Data, backgroundColor: extra1Colors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 8 }] },
+            options: pie3DOptions
+        });
+
+        new Chart(document.getElementById('extraPie2'), {
+            type: 'pie',
+            data: { labels: statusLabels, datasets: [{ data: extra2Data, backgroundColor: extra2Colors, borderWidth: 2, borderColor: '#ffffff', hoverOffset: 8 }] },
+            options: pie3DOptions
+        });
+
+        const designPhaseLabels = ['Preliminary Design', 'Basic Design', 'Execution Design'];
+        const designPhaseData = [typeData, leadData, participatingData];
+        const statusColorMap = {
+            'Creating': '#6c757d',
+            'System release': '#1e88e5',
+            'System update': '#00acc1',
+            'Civil handover': '#fb8c00',
+            'Processing': '#8e24aa',
+            'Closed': '#43a047',
+            'Cancel': '#e53935'
+        };
+
+        const stackedBarValuePlugin = {
+            id: 'stackedBarValuePlugin',
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                ctx.save();
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#ffffff';
+
+                chart.data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    meta.data.forEach((bar, index) => {
+                        const value = dataset.data[index];
+                        if (value == null || value === 0) return;
+
+                        const x = bar.x;
+                        const y = (bar.y + bar.base) / 2;
+                        ctx.fillText(String(value), x, y);
+                    });
+                });
+
+                ctx.restore();
+            }
+        };
+
+        new Chart(document.getElementById('designPhaseBar'), {
+            type: 'bar',
+            data: {
+                labels: designPhaseLabels,
+                datasets: statusLabels.map((status, statusIndex) => ({
+                    label: status,
+                    data: designPhaseData.map((phase) => phase[statusIndex]),
+                    backgroundColor: statusColorMap[status]
+                }))
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { boxWidth: 12, font: { size: 11 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        title: {
+                            display: true,
+                            text: '设计阶段'
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: '接口状态总数量'
+                        }
+                    }
+                }
+            },
+            plugins: [stackedBarValuePlugin]
+        });
+
+        applyLegendData('typeLegend', typeColors, typeData);
+        applyLegendData('leadLegend', leadColors, leadData);
+        applyLegendData('participatingLegend', participatingColors, participatingData);
+        applyLegendData('extra1Legend', extra1Colors, extra1Data);
+        applyLegendData('extra2Legend', extra2Colors, extra2Data);
+    </script>
+</body>
+</html>
+

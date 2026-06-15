@@ -515,7 +515,7 @@ function _initGanttEvents() {
     // })
     if(readonly.value) Gantt.config.readonly = true;
     Gantt.config.order_branch = true;
-    gantt.config.row_height = 40;
+    // Gantt.config.row_height = 40;
     // Gantt.config.work_time = false
     // Gantt.config.validate_task = function(task){
     //     // 允许空/无效日期
@@ -671,7 +671,7 @@ function detectIconType(value) {
     } else {
         return "dxi dxi-checkbox-marked";
     }
-};
+}
 
 // 初始化自定义提示
 function _inCustomTooltips() {

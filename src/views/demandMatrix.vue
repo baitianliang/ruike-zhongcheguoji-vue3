@@ -1,55 +1,46 @@
-﻿<template>
+<template>
   <div class="qingdan-page">
     <div class="container-wrap">
       <div class="layout-row">
         <aside class="left-col">
           <div class="filter-section">
             <div class="logo">
-              <span class="logo-red" v-i18n="'TIC Input List Dashboard'">TIC Input List Dashboard</span>
+              <span class="logo-red" v-i18n="'Demand Matrix'">Demand Matrix</span>
               <LanguageSwitcher style="position: absolute; right: 0px" />
             </div>
+
             <div class="filter-block">
+                <div class="date-range" style="justify-content: center">
+                    {{ currentTime }}
+                </div>
+            </div>
+
+            <!-- <div class="filter-block">
               <div class="date-range">
                 <input v-model="startDate" type="date" />
                 <span>-</span>
                 <input v-model="endDate" type="date" />
               </div>
-            </div>
-            <!-- <div class="filter-block">
-              <label>Start Date</label>
-              <input v-model="startDate" type="date" class="ctl" />
-            </div>
-            <div class="filter-block">
-              <label>End Date</label>
-              <input v-model="endDate" type="date" class="ctl" />
             </div> -->
-            <div class="filter-block">
-              <label v-i18n="'Specialty'">Specialty</label>
-              <select v-model="specialty" class="ctl">
-                <option value="all">All</option>
-                <option v-for="item in specialties" :key="item" :value="item" v-i18n="item">{{ item }}</option>
-              </select>
-            </div>
             <div class="filter-block">
               <label v-i18n="'Design Phase'">Design Phase</label>
               <select v-model="designPhase" class="ctl">
                 <option value="all">All</option>
-                <option v-for="item in designPhases" :key="item" :value="item" v-i18n="item">{{ item }}</option>
+                <option v-for="item in designPhases" :key="item" :value="item" v-i18n="item === '单线基本设计' ? '单线基本设计2' : item">{{ item }}</option>
               </select>
             </div>
             <div class="filter-block">
-              <label v-i18n="'Completion Status'">Completion Status</label>
-              <select v-model="completionStatus" class="ctl">
+              <label v-i18n="'Specialty'">Specialty</label>
+              <select v-model="specialty" class="ctl">
                 <option value="all">All</option>
-                <option v-for="item in statusOptions" :key="item.value" :value="item.value" v-i18n="item.label">{{ item.label }}</option>
+                <option v-for="item in specialties" :key="item" :value="item" v-i18n="item === '接触网' ? '接触网2' : item">{{ item }}</option>
               </select>
             </div>
-
             <div class="filter-block">
-              <label v-i18n="'Input Source'">Input Source</label>
-              <select v-model="inputSource" class="ctl">
+              <label v-i18n="'Is It Satisfied'">Is It Satisfied</label>
+              <select v-model="satisfied" class="ctl">
                 <option value="all">All</option>
-                <option v-for="item in sourceOptions" :key="item" :value="item" v-i18n="item">{{ item }}</option>
+                <option v-for="item in fulfillTheDemands" :key="item" :value="item" v-i18n="item">{{ item }}</option>
               </select>
             </div>
           </div>
@@ -59,9 +50,10 @@
           <div class="chart-card">
             <div class="chart-header">
               <div>
-                <h5 v-i18n="'Total inputs deliverables: '">Total inputs deliverables: <span class="text-primary">{{ totalDeliverables }}</span></h5>
+                <h5 v-i18n="'Total Demand: '">Total Demand: <span class="text-primary">{{ totalDeliverables }}</span></h5>
                 <div class="status-legend">
-                  <span v-for="(item, index) in statusOptions" :key="index" v-i18n="item.value"><i class="dot" :style="'background: ' + item.background"></i>Delayed</span>
+                  <span v-i18n="'Satisfy'"><i class="dot completed"></i>Satisfy</span>
+                  <span v-i18n="'Unsatisfied'"><i class="dot delay-unfinished"></i>Unsatisfied</span>
                 </div>
               </div>
               <div class="progress-ring">
@@ -77,7 +69,7 @@
                   />
                 </svg>
                 <div class="progress-text">{{ completePercent }}%</div>
-                <div class="progress-text" style="width: 100%; top: 85%; font-size: 16px; text-align: center" v-i18n="'Completion Rate'">Completion Rate</div>
+                <div class="progress-text" style="width: 200%; top: 85%; font-size: 16px; text-align: center" v-i18n="'Demand Satisfaction Rate'">Demand Satisfaction Rate</div>
               </div>
             </div>
             <div ref="chartRef" class="deliverables-chart"></div>
@@ -86,34 +78,25 @@
       </div>
 
       <div class="table-card" v-auto-scroll>
-        <h5 v-i18n="'Deliverables List'">Deliverables List</h5>
+        <h5 v-i18n="'Demand List'">Demand List</h5>
         <div class="table-wrap">
           <table class="table-body">
             <thead>
               <tr>
-                <th v-i18n="'List Number'">List Number</th>
-                <th v-i18n="'Content'">Content</th>
-                <th v-i18n="'Specialty'">Specialty</th>
+                <th v-i18n="'SYSTRA Demand Number'">SYSTRA Demand Number</th>
+                <th v-i18n="'TUV Demand Number'">TUV Demand Number</th>
                 <th v-i18n="'Design Phase'">Design Phase</th>
-                <th v-i18n="'Input Source'">Input Source</th>
-                <th v-i18n="'Required Completion Time'">Required Completion Time</th>
-                <th v-i18n="'Actual Completion Time'">Actual Completion Time</th>
-                <th v-i18n="'Completion Status'">Completion Status</th>
+                <th v-i18n="'Specialty'">Specialty</th>
+                <th v-i18n="'Is It Satisfied'">Is It Satisfied</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="row in filteredDeliverables" :key="row.CRHK_IL_QDBH1">
-                <td>{{ row.CRHK_IL_QDBH1 }}</td>
-                <td>{{ row.CRHK_IL_QDNR1 }}</td>
-                <td v-i18n="specialtyLabel(row.CRHK_IL_ZY)">{{ specialtyLabel(row.CRHK_IL_ZY) }}</td>
-                <td v-i18n="row.CRHK_DDL_SJJD_PD">{{ phaseLabel(row.CRHK_DDL_SJJD_PD) }}</td>
-                <td v-i18n="row.CRHK_IL_SFTJ">{{ row.CRHK_IL_SFTJ }}</td>
-                <td>{{ row.CRHK_LCI_YQWCSJ }}</td>
-                <td>{{ row.CRHK_DTP_SJWCSJ || '-' }}</td>
-                <td v-i18n="statusLabel(row.COMPLETION_STATUS)">
-                  <span class="dot" :style="statusOption(row.COMPLETION_STATUS)"></span>
-                  {{ statusLabel(row.COMPLETION_STATUS) }}
-                </td>
+                <td>{{ row.CRHK_DM_SXQBH }}</td>
+                <td>{{ row.CRHK_DM_TUVXQBH }}</td>
+                <td v-i18n="row.CRHK_DDL_SJJD_PD === '单线基本设计' ? '单线基本设计2' : row.CRHK_DDL_SJJD_PD">{{ row.CRHK_DDL_SJJD_PD }}</td>
+                <td v-i18n="row.CRHK_DM_ZY === '接触网' ? '接触网2' : row.CRHK_DM_ZY">{{ row.CRHK_DM_ZY }}</td>
+                <td v-i18n="row.CRHK_DM_MZYQ">{{ row.CRHK_DM_MZYQ }}</td>
               </tr>
             </tbody>
           </table>
@@ -126,27 +109,19 @@
 <script setup>
 import * as echarts from 'echarts'
 import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
-import axios from "../assets/axios/qingdanPage.js"
+import axios from "../assets/axios/demandMatrix.js"
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
 
 let specialties = []
 let designPhases = []
-let sourceOptions = []
-const statusOptions = [
-  { value: 'Completed', label: 'Completed', background: '#28a745' },
-  { value: 'Incompleted (partially received)', label: 'Incompleted (partially received)', background: '#007bff' },
-  { value: 'Not received', label: 'Not received', background: '#8a95e8' },
-  { value: 'Assumptions adopted between CRRC and SYSTRA', label: 'Assumptions adopted between CRRC and SYSTRA', background: '#7f3bf5' },
-  { value: 'Under Discussion', label: 'Under Discussion', background: '#ffc60a' },
-  { value: 'Delayed', label: 'Delayed', background: '#dc3545' },
-]
+let fulfillTheDemands = []
 
+const currentTime = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const specialty = ref('all')
 const designPhase = ref('all')
-const completionStatus = ref('all')
-const inputSource = ref('all')
+const satisfied = ref('all')
 
 const chartRef = ref(null)
 let chart = null
@@ -158,22 +133,22 @@ const filteredDeliverables = computed(() => {
   const end = endDate.value ? new Date(endDate.value) : null
 
   return deliverablesData.value.filter((item) => {
-    if (specialty.value !== 'all' && item.CRHK_IL_ZY !== specialty.value) return false
+    if (specialty.value !== 'all' && item.CRHK_DM_ZY !== specialty.value) return false
     if (designPhase.value !== 'all' && item.CRHK_DDL_SJJD_PD !== designPhase.value) return false
-    if (completionStatus.value !== 'all' && item.COMPLETION_STATUS !== completionStatus.value) return false
-    if (inputSource.value !== 'all' && item.CRHK_IL_SFTJ !== inputSource.value) return false
-
-    const baseline = new Date(String(item.CRHK_LCI_YQWCSJ).replace(/\//g, '-'))
-    if (start && baseline < start) return false
-    if (end && baseline > end) return false
+    if (satisfied.value !== 'all' && item.CRHK_DM_MZYQ !== satisfied.value) return false
     return true
   })
 })
 
+function updateClock() {
+  const now = new Date()
+  currentTime.value = now.toLocaleString()
+}
+
 const totalDeliverables = computed(() => filteredDeliverables.value.length)
 
 const completedCount = computed(() => {
-  return filteredDeliverables.value.filter((item) => item.COMPLETION_STATUS === 'Completed').length
+  return filteredDeliverables.value.filter((item) => item.CRHK_DM_MZYQ === '是').length
 })
 
 const completePercent = computed(() => {
@@ -191,21 +166,6 @@ function specialtyLabel(value) {
   return found ? found : value
 }
 
-function phaseLabel(value) {
-  const found = designPhases.find((item) => item === value)
-  return found ? found : value
-}
-
-const statusOption = (value) => {
-  const found = statusOptions.find((item) => item.value === value)
-  return found ? `background: ${found.background};` : ''
-}
-
-function statusLabel(value) {
-  const found = statusOptions.find((item) => item.value === value)
-  return found ? found.label : value
-}
-
 function getRemSize() {
   const html = document.documentElement;
   const clientWidth = html.clientWidth;
@@ -216,37 +176,16 @@ const fontSize = getRemSize()
 function renderChart() {
   if (!chart) return
 
+  const labels = specialties
   const statusMap = {
-    "Completed": { key: 'Completed', color: '#28a745' },
-    "Incompleted (partially received)": { key: 'Incompleted (partially received)', color: '#007bff' },
-    "Not received": { key: 'Not received', color: '#8a95e8' },
-    "Assumptions adopted between CRRC and SYSTRA": { key: 'Assumptions adopted between CRRC and SYSTRA', color: '#7f3bf5' },
-    "Under Discussion": { key: 'Under Discussion', color: '#ffc60a' },
-    'Delayed': { key: 'Delayed', color: '#dc3545' },
+    Satisfy: { key: '是', color: '#28a745' },
+    Unsatisfied: { key: '否', color: '#dc3545' },
   }
 
-  // 1. 预计算每个 specialty 的各状态数量
-  const rawData = specialties.map((sp) => {
-    const statusCounts = {};
-    Object.keys(statusMap).forEach((label) => {
-      statusCounts[label] = filteredDeliverables.value.filter(
-        (item) => item.CRHK_IL_ZY === sp && item.COMPLETION_STATUS === statusMap[label].key
-      ).length;
-    });
-    const total = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-    return { name: sp, counts: statusCounts, total };
-  });
-
-  // 2. 过滤掉 total === 0 的类别
-  const filteredRawData = rawData.filter(item => item.total > 0);
-
-  // 3. 生成最终的 labels 和 datasets
-  const finalLabels = filteredRawData.map(item => item.name);
-
   const datasets = Object.keys(statusMap).map((label) => {
-    const cfg = statusMap[label];
+    const cfg = statusMap[label]
     return {
-      name: label,
+      name: window.i18nManager.getText(label),
       type: 'bar',
       stack: 'total',
       itemStyle: { color: cfg.color },
@@ -254,37 +193,39 @@ function renderChart() {
         show: true,
         position: 'inside',
         formatter: function (params) {
-          return params.value < 1 ? '' : params.value;
+            var threshold = 1;
+            if (params.value < threshold) {
+                return ''; // 返回空字符串，相当于隐藏了 label
+            } else {
+                return params.value; // 显示数值
+            }
         },
       },
-      data: filteredRawData.map(item => item.counts[label]),
-    };
-  });
-
-  // 4. 点击事件（需要适配原始 specialty 值）
-  chart.off('click'); // 避免重复绑定
-  chart.on('click', function(params) {
-    // params.name 是显示在 X 轴上的文本（已经过国际化）
-    // 需要在原始的 specialties 中找到匹配项
-    const matchedSpecialty = specialties.find(sp => window.i18nManager.getText(sp) === params.name);
-    if (matchedSpecialty) {
-      specialty.value = matchedSpecialty;
+      data: specialties.map((sp) => {
+        return filteredDeliverables.value.filter((item) => item.CRHK_DM_ZY === sp && item.CRHK_DM_MZYQ === cfg.key).length
+      }),
     }
-    completionStatus.value = params.seriesName;
-  });
+  })
 
-  // 5. 设置图表
+  statusMap["满足"] = { key: '是', color: '#28a745' }
+  statusMap["不满足"] = { key: '否', color: '#dc3545' }
+  chart.on('click', function(params) {
+    specialties.forEach((item) => {
+      if (window.i18nManager.getText(item) === params.name) {
+        specialty.value = item
+      }
+    })
+    satisfied.value = statusMap[params.seriesName].key
+  });
+  
   chart.setOption({
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    // legend: { top: 0, width: '100%' },
     grid: { left: '3%', right: '3%', bottom: '8%', containLabel: true },
-    xAxis: { 
-      type: 'category', 
-      data: finalLabels.map(item => window.i18nManager.getText(item)), // 使用过滤后的数据
-      axisLabel: { interval: 0, fontSize: 14 * fontSize, overflow: 'break', width: 130 * fontSize } 
-    },
+    xAxis: { type: 'category', data: labels.map(item => item = window.i18nManager.getText(item)), axisLabel: { interval: 0, fontSize: 14 * fontSize, overflow: 'break', width: 130 * fontSize, } },
     yAxis: { type: 'value' },
     series: datasets,
-  });
+  })
 }
 
 function onResize() {
@@ -293,15 +234,23 @@ function onResize() {
 
 onMounted(async () => {
   window.addEventListener('languageChanged', updateLanguage);
-  const optionRes = await axios.getOptionsList()
-  designPhases = optionRes.data.data.srqd.DesignPhase
-  specialties = optionRes.data.data.srqd.Specialty
-  sourceOptions = optionRes.data.data.srqd.srly
-  const res = await axios.getTableData()
-  deliverablesData.value = res.data.data
+  updateClock()
+  const clockInterval = setInterval(updateClock, 1000)
+  axios.getOptionsList()
+  .then((res) => {
+    designPhases = res.data.data.xqjz.DesignPhase
+    specialties = res.data.data.xqjz.Specialty
+    fulfillTheDemands = res.data.data.xqjz.FulfillTheDemands
+  })
+  axios.getTableData()
+  .then((res) => {
+    deliverablesData.value = res.data.data
+  })
+  await nextTick()
   chart = echarts.init(chartRef.value)
   renderChart()
   window.addEventListener('resize', onResize)
+  onUnmounted(() => clearInterval(clockInterval))
 })
 
 const updateLanguage = () => {
@@ -468,6 +417,7 @@ watch(filteredDeliverables, () => {
     position: relative;
     // width: 150px;
     height: 120px;
+    margin-right: 30px;
 
     .progress-text {
       position: absolute;
@@ -513,25 +463,16 @@ watch(filteredDeliverables, () => {
         }
       }
       td:first-child {
-        min-width: 150px;
+        min-width: 200px;
       }
       td:nth-child(3) {
-        min-width: 100px;
+        min-width: 120px;
       }
       td:nth-child(4) {
         min-width: 120px;
       }
       td:nth-child(5) {
-        min-width: 140px;
-      }
-      td:nth-child(6) {
-        min-width: 140px;
-      }
-      td:nth-child(7) {
-        min-width: 140px;
-      }
-      td:nth-child(8) {
-        min-width: 180px;
+        min-width: 120px;
       }
     }
   }

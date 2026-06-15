@@ -24,6 +24,7 @@ app.mount('#app')
 
 
 function setRem() {
+  if(window.location.href.indexOf('/customTable') > -1) return;
   const baseSize = 16 // 基准大小
   const designWidth = 1920 // 设计稿宽度
   const currentWidth = Math.min(document.documentElement.clientWidth, 1920)

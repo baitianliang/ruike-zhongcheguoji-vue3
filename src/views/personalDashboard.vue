@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="personal-dashboard">
     <!-- Header -->
     <header class="animate-in">
       <div class="header-title">
@@ -49,10 +49,10 @@
           v-i18n="'mark_read_stop_blink'"
           @click="markUrgentAsRead"
         >
-          12
+          {{ baseForm.ZSL }}
         </div>
         <div class="stat-trend trend-up">
-          <span v-i18n="'stat_trend_increase'">较昨日 +2</span>
+          <span><span v-i18n="'stat_trend_increase'">较昨日</span> <span v-if="baseForm.RWZL > -1">+</span>{{ baseForm.RWZL }}</span>
         </div>
       </div>
 
@@ -73,7 +73,7 @@
           v-i18n="'mark_read_stop_blink'"
           @click="markEmailAsRead"
         >
-          5
+          0
         </div>
         <div class="stat-trend trend-neutral">
           <span v-i18n="'stat_trend_stable'">保持平稳</span>
@@ -89,7 +89,7 @@
             </svg>
           </div>
         </div>
-        <div class="stat-value">98%</div>
+        <div class="stat-value">待显示</div>
         <div class="stat-trend trend-up">
           <span v-i18n="'status_excellent'">状态极佳</span>
         </div>
@@ -118,34 +118,34 @@
                 <th v-i18n="'deadline'">截止时间</th>
                 <th v-i18n="'upstream'">上游方</th>
                 <th v-i18n="'downstream'">下游方</th>
-                <th v-i18n="'owner'">负责人</th>
+                <!-- <th v-i18n="'owner'">负责人</th> -->
               </tr>
             </thead>
             <tbody>
               <tr 
-                v-for="item in paginatedOverdueTasks" 
-                :key="item.id"
+                v-for="(item, index) in paginatedOverdueTasks" 
+                :key="index"
                 :class="{ 'row-blink': true }"
               >
                 <td style="color: var(--text-tertiary)">{{ item.id }}</td>
                 <td>
-                  <div style="font-weight: 500;" class="text-red" v-i18n="item.title">{{ item.title }}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.desc }}</div>
+                  <div style="font-weight: 500;" class="text-red">{{ item.RWMC1 }}</div>
+                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.RWMC2 }}</div>
                 </td>
                 <td>
-                  <span :class="['status-badge', item.sourceType]" v-i18n="item.source">{{ item.source }}</span>
+                  <span :class="['status-badge', 'badge-design']">{{ item.source }}</span>
                 </td>
-                <td class="text-red">{{ item.date }}</td>
-                <td v-i18n="item.upstream">{{ item.upstream }}</td>
-                <td style="color: var(--text-tertiary)" v-i18n="item.downstream">{{ item.downstream }}</td>
-                <td>
+                <td class="text-red">{{ item.JZRQ }}</td>
+                <td>{{ item.SYF }}</td>
+                <td style="color: var(--text-tertiary)">{{ item.XYF }}</td>
+                <!-- <td>
                   <div class="user-row">
                     <div class="user-avatar" :style="{ backgroundColor: item.avatarColor }">
                       {{ item.owner[0] }}
                     </div>
                     <span>{{ item.owner }}</span>
                   </div>
-                </td>
+                </td> -->
               </tr>
             </tbody>
           </table>
@@ -200,30 +200,21 @@
                 <th v-i18n="'deadline'">截止时间</th>
                 <th v-i18n="'upstream'">上游方</th>
                 <th v-i18n="'downstream'">下游方</th>
-                <th v-i18n="'owner'">负责人</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in paginatedWeeklyTasks" :key="item.id">
                 <td style="color: var(--text-tertiary)">{{ item.id }}</td>
                 <td>
-                  <div style="font-weight: 500;" class="text-black" v-i18n="item.title">{{ item.title }}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.desc }}</div>
+                  <div style="font-weight: 500;" class="text-red">{{ item.RWMC1 }}</div>
+                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.RWMC2 }}</div>
                 </td>
                 <td>
-                  <span :class="['status-badge', item.sourceType]" v-i18n="item.source">{{ item.source }}</span>
+                  <span :class="['status-badge', 'badge-design']">{{ item.source }}</span>
                 </td>
-                <td class="text-black">{{ item.date }}</td>
-                <td v-i18n="item.upstream">{{ item.upstream }}</td>
-                <td style="color: var(--text-tertiary)" v-i18n="item.downstream">{{ item.downstream }}</td>
-                <td>
-                  <div class="user-row">
-                    <div class="user-avatar" :style="{ backgroundColor: item.avatarColor }">
-                      {{ item.owner[0] }}
-                    </div>
-                    <span>{{ item.owner }}</span>
-                  </div>
-                </td>
+                <td class="text-red">{{ item.JZRQ }}</td>
+                <td>{{ item.SYF }}</td>
+                <td style="color: var(--text-tertiary)">{{ item.XYF }}</td>
               </tr>
             </tbody>
           </table>
@@ -284,30 +275,21 @@
                 <th v-i18n="'deadline'">截止时间</th>
                 <th v-i18n="'upstream'">上游方</th>
                 <th v-i18n="'downstream'">下游方</th>
-                <th v-i18n="'owner'">负责人</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in paginatedMonthlyTasks" :key="item.id">
                 <td style="color: var(--text-tertiary)">{{ item.id }}</td>
                 <td>
-                  <div style="font-weight: 500;" class="text-black" v-i18n="item.title">{{ item.title }}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.desc }}</div>
+                  <div style="font-weight: 500;" class="text-red">{{ item.RWMC1 }}</div>
+                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.RWMC2 }}</div>
                 </td>
                 <td>
-                  <span :class="['status-badge', item.sourceType]" v-i18n="item.source">{{ item.source }}</span>
+                  <span :class="['status-badge', 'badge-design']">{{ item.source }}</span>
                 </td>
-                <td class="text-black">{{ item.date }}</td>
-                <td v-i18n="item.upstream">{{ item.upstream }}</td>
-                <td style="color: var(--text-tertiary)" v-i18n="item.downstream">{{ item.downstream }}</td>
-                <td>
-                  <div class="user-row">
-                    <div class="user-avatar" :style="{ backgroundColor: item.avatarColor }">
-                      {{ item.owner[0] }}
-                    </div>
-                    <span>{{ item.owner }}</span>
-                  </div>
-                </td>
+                <td class="text-red">{{ item.JZRQ }}</td>
+                <td>{{ item.SYF }}</td>
+                <td style="color: var(--text-tertiary)">{{ item.XYF }}</td>
               </tr>
             </tbody>
           </table>
@@ -363,30 +345,21 @@
                 <th v-i18n="'deadline'">截止时间</th>
                 <th v-i18n="'upstream'">上游方</th>
                 <th v-i18n="'downstream'">下游方</th>
-                <th v-i18n="'owner'">负责人</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in paginatedQuarterlyTasks" :key="item.id">
                 <td style="color: var(--text-tertiary)">{{ item.id }}</td>
                 <td>
-                  <div style="font-weight: 500;" class="text-black" v-i18n="item.title">{{ item.title }}</div>
-                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.desc }}</div>
+                  <div style="font-weight: 500;" class="text-red">{{ item.RWMC1 }}</div>
+                  <div style="font-size: 11px; color: var(--text-secondary)">{{ item.RWMC2 }}</div>
                 </td>
                 <td>
-                  <span :class="['status-badge', item.sourceType]" v-i18n="item.source">{{ item.source }}</span>
+                  <span :class="['status-badge', 'badge-design']">{{ item.source }}</span>
                 </td>
-                <td class="text-black">{{ item.date }}</td>
-                <td v-i18n="item.upstream">{{ item.upstream }}</td>
-                <td style="color: var(--text-tertiary)" v-i18n="item.downstream">{{ item.downstream }}</td>
-                <td>
-                  <div class="user-row">
-                    <div class="user-avatar" :style="{ backgroundColor: item.avatarColor }">
-                      {{ item.owner[0] }}
-                    </div>
-                    <span>{{ item.owner }}</span>
-                  </div>
-                </td>
+                <td class="text-red">{{ item.JZRQ }}</td>
+                <td>{{ item.SYF }}</td>
+                <td style="color: var(--text-tertiary)">{{ item.XYF }}</td>
               </tr>
             </tbody>
           </table>
@@ -426,6 +399,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
+import axios from "../assets/axios/base.js"
 
 // 国际化处理函数
 const $t = (key) => {
@@ -480,10 +454,14 @@ const generateData = (count, startId) => {
 
 // 数据集合
 const dataSets = ref({
-  'overdue': generateData(12, 1),
-  'weekly': generateData(18, 13),
-  'monthly': generateData(25, 31),
-  'quarterly': generateData(8, 56)
+  'overdue': [],
+  // 'weekly': generateData(18, 13),
+  // 'monthly': generateData(25, 31),
+  // 'quarterly': generateData(8, 56)
+
+  'weekly': [],
+  'monthly': [],
+  'quarterly': [],
 })
 
 // 分页状态
@@ -597,8 +575,50 @@ function getPageRange(type) {
   return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i)
 }
 
+const projectId = window.top?.getCurrentProjectId && window.top.getCurrentProjectId() || 1012
+const userId = window.top._P?.data?.navbean?.user?.userid || 1000
+const userName = window.top._P?.data?.navbean?.user?.lastname || '测试'
+
+const baseForm = ref({})
+
 // 生命周期
 onMounted(() => {
+  initFun()
+  axios.getTableData('V_CRHK_TASK_NUM')
+  .then(res => {
+    baseForm.value = res.data.data.find(item => item.PROJECT_ID === projectId && item.USERID === userId) || {
+      ZSL: 0,
+      RWZL: 0
+    }
+  })
+  axios.getTableData('V_CRHK_GRDLSY_RWQD')
+  .then(res => {
+    const data = res.data.data.filter(item => item.PROJECT_ID === projectId && item.LY && item.LY.indexOf(JSON.stringify(userId)) > -1);
+    data.forEach(el => {el.source = userName})
+    dataSets.value.overdue = data.filter(item => item.SFYQ === 1)
+    dataSets.value.overdue.forEach((item, index) => {
+      item.source = userName
+      item.id = index + 1
+    })
+    dataSets.value.weekly = data.filter(item => item.SFBZ === 1)
+    dataSets.value.weekly.forEach((item, index) => {
+      item.source = userName
+      item.id = index + 1
+    })
+    dataSets.value.monthly = data.filter(item => item.SFBY === 1)
+    dataSets.value.monthly.forEach((item, index) => {
+      item.source = userName
+      item.id = index + 1
+    })
+    dataSets.value.quarterly = data.filter(item => item.SFBJD === 1)
+    dataSets.value.quarterly.forEach((item, index) => {
+      item.source = userName
+      item.id = index + 1
+    })
+  })
+})
+
+function initFun() {
   // 初始化主题
   const savedTheme = localStorage.getItem('theme')
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -615,7 +635,7 @@ onMounted(() => {
   onUnmounted(() => {
     clearInterval(clockInterval)
   })
-})
+}
 </script>
 
 <style scoped>
@@ -691,10 +711,11 @@ body {
 }
 
 /* Layout */
-.app-container {
-    max-width: 1600px;
+.personal-dashboard {
+    /* max-width: 1600px; */
     margin: 0 auto;
-    padding: 24px;
+    width: 100%;
+    padding: 20px 100px;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -858,7 +879,7 @@ header {
 /* Tasks Grid Layout (2x2) */
 .tasks-grid-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
     gap: 12px; /* Reduced from 20px */
 }
 
@@ -892,12 +913,6 @@ header {
     width: 20px;
     height: 20px;
     stroke-width: 2.5;
-}
-
-.section-title::before {
-    content: '#';
-    color: var(--text-tertiary);
-    font-weight: 400;
 }
 
 .title-overdue { color: #ef4444; }

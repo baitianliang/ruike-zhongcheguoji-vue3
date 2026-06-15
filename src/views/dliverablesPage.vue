@@ -8,6 +8,12 @@
           </div>
 
           <div class="filter-group">
+            <div class="date-range" style="justify-content: center">
+              {{ currentTime }}
+            </div>
+          </div>
+
+          <div class="filter-group" style="position: absolute; bottom: 20px">
             <div class="date-range">
               <input v-model="startDate" type="date" />
               <span>-</span>
@@ -36,10 +42,49 @@
           </div>
 
           <div class="filter-group">
+            <label v-i18n="'Completion Status'">Completion Status</label>
+            <div class="multiselect" ref="statusRef">
+              <div class="select-box" @click="statusOpen = !statusOpen">
+                <div class="selected-options">{{ completionStatusLabel }}</div>
+                <div class="arrow"></div>
+              </div>
+              <div class="options-container" :class="{ hidden: !statusOpen }">
+                <label class="option">
+                  <input
+                    type="checkbox"
+                    value="All"
+                    :checked="completionStatus.includes('All')"
+                    @change="onCompletionStatusChange('All', $event.target.checked)"
+                  />
+                  <span>All</span>
+                </label>
+                <label v-for="item in statusOptions" :key="item" class="option">
+                  <input
+                    type="checkbox"
+                    :value="item.value"
+                    :checked="completionStatus.includes(item.value)"
+                    @change="onCompletionStatusChange(item.value, $event.target.checked)"
+                    v-i18n="item.label"
+                  />
+                  <span v-i18n="item.label">{{ item.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- <div class="filter-group">
+            <label v-i18n="'Completion Status'">Completion Status</label>
+            <select v-model="completionStatus" class="ctl">
+              <option value="All">All</option>
+              <option v-for="item in statusOptions" :key="item.value" :value="item.value" v-i18n="item.label">{{ item.label }}</option>
+            </select>
+          </div> -->
+
+          <div class="filter-group">
             <label v-i18n="'Design Phase'">Design Phase</label>
             <select v-model="selectedDesignPhase">
               <option value="All">All</option>
-              <option v-for="item in designPhases" :key="item" :value="item">{{ item }}</option>
+              <option v-for="item in designPhases" :key="item" :value="item" v-i18n="item">{{ item }}</option>
             </select>
           </div>
 
@@ -47,7 +92,7 @@
             <label v-i18n="'Version'">Version</label>
             <select v-model="selectedVersion">
               <option value="All">All</option>
-              <option v-for="item in versions" :key="item" :value="item">{{ item }}</option>
+              <option v-for="item in versions" :key="item" :value="item" v-i18n="item">{{ item }}</option>
             </select>
           </div>
 
@@ -59,10 +104,32 @@
         <main class="main-content">
           <div class="row top-charts">
             <div class="dliverables-card chart-card" v-auto-scroll>
-              <div class="card-header" v-i18n="'Milestone Nodes'">Milestone Nodes
-                <LanguageSwitcher style="position: absolute; right: 0px; top: -6px" />
+              <div class="card-header" v-i18n="'Statistical Analysis Of Milestone Completion Status'">Statistical Analysis Of Milestone Completion Status
+                <LanguageSwitcher style="margin-left: 10px;" />
+                <button 
+                  class="btn btn-outline"
+                  style="margin-left: 10px;"
+                  @click="router.push('/newDliverables')"
+                  v-i18n="'深色'"
+                >新页面
+                </button>
+                <!-- <el-radio-group style="position: absolute; right: 0px" v-model="radio" size="large">
+                  <el-radio-button label="图表" value="0" />
+                  <el-radio-button label="表格" value="1" />
+                </el-radio-group> -->
+                <div style="position: absolute; right: 20px; top: 5px; display: flex">
+                  <div style="margin-right: 20px; display: flex; flex-direction: column; align-items: center;">
+                    <div v-i18n="'Percentage of Plan Completion'">Percentage of Plan Completion</div>
+                    <div style="color: #52c41a">{{ workScheduleRows[0]?.ZT_JHWCBL }}%</div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div v-i18n="'Actual Completion Percentage'">Actual Completion Percentage</div>
+                    <div style="color: #1976d2">{{ workScheduleRows[0]?.ZT_SJWCBL }}%</div>
+                  </div>
+                </div>
               </div>
-              <div class="table-container table-wrap">
+              <div v-show="radio === '0'" ref="reviewChartRef" class="chart-container" @mouseenter="isActive = false" @mouseleave="isActive = true"></div>
+              <div v-if="radio === '1'" class="table-container table-wrap">
                 <table class="work-schedule-table table-body">
                   <thead>
                     <tr>
@@ -84,8 +151,8 @@
                       <td>{{ row.CRRC_JL_JHWC }}</td>
                       <td>{{ row.CRRC_JL_WCBFB }}%</td>
                       <td>{{ row.CRRC_JL_SJWC }}</td>
-                      <td>{{ row.JFWSL }}</td>
-                      <td>{{ row.YZPFSL }}</td>
+                      <td>{{ row.GLSJJFWSL }}</td>
+                      <td>{{ row.TGYZPFSL }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -96,7 +163,6 @@
           <div class="row middle-section">
             <div class="dliverables-card summary-card">
               <div class="card-header" v-i18n="'Distribution of Deliverable Status'">Distribution of Deliverable Status</div>
-              <!-- <div ref="reviewChartRef" class="chart-container"></div> -->
 
               <div class="task-table-container table-wrap">
                 <table class="task-table table-body">
@@ -115,13 +181,6 @@
                       </td>
                       <td v-for="_item in statisticsTableColumns" :key="_item">{{ item[_item.replaceAll(' ', '_')] }}</td>
                       <td>{{ item.TOTAL }}</td>
-                      <!-- <td>{{ item.CRHK_RL_JFWMC }}</td>
-                      <td v-i18n="item.CRHK_PPR_WJLX_XL">{{ item.CRHK_PPR_WJLX_XL }}</td>
-                      <td>{{ item.CRHK_DDL_SJJD_PD }}</td>
-                      <td>{{ item.CRHK_DDLI_DQBB_XL }}</td>
-                      <td>{{ item.CRHK_DDL_YQWCSJ }}</td>
-                      <td>{{ item.CRHK_DDR_WCBL_SM }}</td>
-                      <td>{{ item.CRHK_DDR_SFWWCSJ }}</td> -->
                     </tr>
                   </tbody>
                 </table>
@@ -132,12 +191,12 @@
               <div class="approval-row">
                 <div class="approval-item">
                   <div class="kpi-value">{{ kpi.spvCount }}</div>
-                  <div class="kpi-label">Approval Documents</div>
+                  <div class="kpi-label" v-i18n="'Approval Documents'">Approval Documents</div>
                   <div ref="gaugeSPVRef" class="gauge-chart"></div>
                 </div>
                 <div class="approval-item">
                   <div class="kpi-value">{{ kpi.tuvCount }}</div>
-                  <div class="kpi-label">Forecast Documents</div>
+                  <div class="kpi-label" v-i18n="'Forecast Documents'">Forecast Documents</div>
                   <div ref="gaugeTUVRef" class="gauge-chart"></div>
                 </div>
                 <!-- <div class="approval-item">
@@ -151,7 +210,43 @@
         </main>
       </div>
 
-      <div class="bottom-section" v-auto-scroll>
+      <main class="bottom-section right-col">
+        <div class="chart-card" style="position: relative;">
+          <div style="position: absolute">
+            <div class="card-header" v-i18n="'Distribution Chart Of Completion Status For Each Specialty'">Distribution Chart Of Completion Status For Each Specialty</div>
+            <div class="kpi-label" v-i18n="'Total Quantity'">Total Quantity</div>
+            <div style="color: #0d3a8b; font-weight: bold; font-size: 24px">{{ filteredData.length }}</div>
+          </div>
+          <!-- <div class="chart-header">
+            <div>
+              <h5 v-i18n="'Total inputs deliverables: '">Total inputs deliverables: <span class="text-primary">{{ totalDeliverables }}</span></h5>
+              <div class="status-legend">
+                <span v-i18n="'Delayed'"><i class="dot delay-unfinished"></i>Delayed</span>
+                <span v-i18n="'Delivered'"><i class="dot completed"></i>Delivered</span>
+                <span v-i18n="'In Progress'"><i class="dot unfinished"></i>In Progress</span>
+                <span v-i18n="'Under Discussion'"><i class="dot delay-completed"></i>Under Discussion</span>
+              </div>
+            </div>
+            <div class="progress-ring">
+              <svg width="150" height="120">
+                <path d="M10,90 A65,65 0 0,1 140,90" stroke="#e0e0e0" stroke-width="12" fill="transparent" />
+                <path
+                  d="M10,90 A65,65 0 0,1 140,90"
+                  stroke="#28a745"
+                  stroke-width="12"
+                  fill="transparent"
+                  :stroke-dasharray="circumference"
+                  :stroke-dashoffset="progressOffset"
+                />
+              </svg>
+              <div class="progress-text">{{ completePercent }}%</div>
+            </div>
+          </div> -->
+          <div ref="chartRef" class="deliverables-chart"></div>
+        </div>
+      </main>
+
+      <div class="bottom-section">
         <div class="dliverables-card table-card">
           <div class="task-table-container table-wrap">
             <table class="task-table table-body">
@@ -165,18 +260,23 @@
                   <th v-i18n="'Due Date'">Due Date</th>
                   <th v-i18n="'Progress'">Progress</th>
                   <th v-i18n="'Actual Date'">Actual Date</th>
+                  <th v-i18n="'Completion Status'">Completion Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, index) in tableRows" :key="index">
-                  <td>{{ item.CRHK_RL_JFWBH }}</td>
+                  <td>{{ item.CRHK_DDLI_CPTM }}</td>
                   <td>{{ item.CRHK_RL_JFWMC }}</td>
                   <td v-i18n="item.CRHK_PPR_WJLX_XL">{{ item.CRHK_PPR_WJLX_XL }}</td>
-                  <td>{{ item.CRHK_DDL_SJJD_PD }}</td>
-                  <td>{{ item.CRHK_DDLI_DQBB_XL }}</td>
-                  <td>{{ item.CRHK_DDL_YQWCSJ }}</td>
+                  <td v-i18n="item.CRHK_DDL_SJJD_PD">{{ item.CRHK_DDL_SJJD_PD }}</td>
+                  <td v-i18n="item.CRHK_DDLI_DQBB_XL">{{ item.CRHK_DDLI_DQBB_XL }}</td>
+                  <td>{{ item.CRHK_DDLI_TJLBBSJ }}</td>
                   <td>{{ item.CRHK_DDR_WCBL_SM }}</td>
-                  <td>{{ item.CRHK_DDR_SFWWCSJ }}</td>
+                  <td>{{ item.CRHK_DDLI_STRASJWC }}</td>
+                  <td v-i18n="statusLabel(item.COMPLETION_STATUS)">
+                    <span class="dot" :style="statusOption(item.COMPLETION_STATUS)"></span>
+                    {{ statusLabel(item.COMPLETION_STATUS) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -189,24 +289,46 @@
 
 <script setup>
 import * as echarts from 'echarts'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue'
 import axios from "../assets/axios/dliverablesPage.js"
 import LanguageSwitcher from '../components/LanguageSwitcher.vue';
+import router from '@/router'
 
 let disciplineOptions = ['All']
 let designPhases = []
 let versions = []
+const statusOptions = [
+  { value: '如期完成', label: 'completed', background: '#28a745' },
+  { value: '延期未完成', label: 'Delayed But Not', background: '#dc3545' },
+  { value: '进行中', label: 'In Progress', background: '#007bff' },
+  { value: '延期已完成', label: 'Delayed But Completed', background: '#FFA500' },
+]
 
+const statusOption = (value) => {
+  const found = statusOptions.find((item) => item.value === value)
+  return found ? `background: ${found.background};` : ''
+}
+
+function statusLabel(value) {
+  const found = statusOptions.find((item) => item.value === value)
+  return found ? found.label : value
+}
+const currentTime = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const selectedDesignPhase = ref('All')
 const selectedVersion = ref('All')
+const completionStatus = ref(['All'])
 const selectedDisciplines = ref(['All'])
 const searchText = ref('')
 const disciplineOpen = ref(false)
+const statusOpen = ref(false)
+
+const radio = ref('0')
 
 const disciplineRef = ref(null)
-// const reviewChartRef = ref(null)
+const statusRef = ref(null)
+const reviewChartRef = ref(null)
 const gaugeSPVRef = ref(null)
 const gaugeTUVRef = ref(null)
 // const gaugeOwnerRef = ref(null)
@@ -216,6 +338,95 @@ const charts = {
   spv: null,
   tuv: null,
   // owner: null,
+}
+
+const chartRef = ref(null)
+
+function renderChart() {
+  let chart = echarts.init(chartRef.value)
+  const labels = disciplineOptions.map(item => window.i18nManager.getText(item));
+  labels.shift();
+
+  const statusMap = {
+    '如期完成': { key: window.i18nManager.getText('completed'), color: '#28a745' },
+    '延期未完成': { key: window.i18nManager.getText('Delayed But Not'), color: '#dc3545' },
+    '进行中': { key: window.i18nManager.getText('In Progress'), color: '#007bff' },
+    '延期已完成': { key: window.i18nManager.getText('Delayed But Completed'), color: '#FFA500' },
+  };
+
+  // 2. 为每个 discipline 计算各状态的数量
+  const rawData = labels.map((sp) => {
+    const statusCounts = {};
+    Object.keys(statusMap).forEach((label) => {
+      statusCounts[label] = filteredData.value.filter(
+        (item) => window.i18nManager.getText(item.CRHK_PPR_WJLX_XL) === sp && item.COMPLETION_STATUS === label
+      ).length;
+    });
+    return { name: sp, counts: statusCounts, total: Object.values(statusCounts).reduce((a,b) => a+b, 0) };
+  });
+
+  // 3. 过滤掉 total === 0 的类别
+  const filteredRawData = rawData.filter(item => item.total > 0);
+
+  // 4. 生成最终的 labels 和 datasets
+  const finalLabels = filteredRawData.map(item => item.name);
+
+  const datasets = Object.keys(statusMap).map((label) => {
+    const cfg = statusMap[label];
+    return {
+      name: cfg.key,
+      type: 'bar',
+      stack: 'total',
+      itemStyle: { color: cfg.color },
+      label: {
+        show: true,
+        position: 'inside',
+        formatter: function (params) {
+          return params.value < 1 ? '' : params.value;
+        },
+      },
+      data: filteredRawData.map(item => item.counts[label]),
+    };
+  });
+
+  // 5. 点击事件需要重新适配索引
+  chart.off('click'); // 避免重复绑定
+  chart.on('click', function(params) {
+    if (params.componentType === 'series') {
+      const originalDisciplineName = params.name;
+      // 找到在原始 disciplineOptions 中的位置（需要处理国际化匹配）
+      const originalIndex = disciplineOptions.findIndex(
+        opt => window.i18nManager.getText(opt) === originalDisciplineName
+      );
+      if (originalIndex > -1) {
+        selectedDisciplines.value = [disciplineOptions[originalIndex]];
+      }
+      
+      Object.keys(statusMap).forEach((label) => {
+        if (statusMap[label].key === params.seriesName) {
+          completionStatus.value = [label];
+        }
+      });
+    }
+  });
+
+  // 6. 设置图表
+  chart.setOption({
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { top: 0, width: '100%', selectedMode: false },
+    grid: { left: '5%', right: '3%', bottom: '8%', containLabel: true },
+    xAxis: { 
+      type: 'category', 
+      data: finalLabels,  // 使用过滤后的 labels
+      axisLabel: { interval: 0, fontSize: 14 * fontSize, overflow: 'break', width: 130 * fontSize } 
+    },
+    yAxis: { type: 'value' },
+    series: datasets,
+  });
+}
+function updateClock() {
+  const now = new Date()
+  currentTime.value = now.toLocaleString().replaceAll('/', '-')
 }
 
 function generateDate(start, end) {
@@ -283,34 +494,35 @@ const filteredData = computed(() => {
   const end = endDate.value ? new Date(endDate.value) : null
   const keyword = searchText.value.trim().toLowerCase()
   const allSelected = selectedDisciplines.value.includes('All')
+  const allStatus = completionStatus.value.includes('All')
+  const query = {
+    version: selectedVersion.value === 'All' ? '' : selectedVersion.value,
+    designPhase: selectedDesignPhase.value === 'All' ? '' : selectedDesignPhase.value,
+    fileType: selectedDisciplines.value.includes('All') ? '' : selectedDisciplines.value.join(','),
+  }
+  axios.getTable3Data(query)
+  .then(res => {
+    statisticsTable.value = selectedVersion.value === 'All' ? res.data.data : res.data.data.filter(item => [selectedVersion.value, '总计'].includes(item.FILE_VERSION))
+  })
   return mockData.value.filter((item) => {
     let inDate = true
-    const baseline = new Date(String(item.CRHK_DDL_YQWCSJ).replace(/\//g, '-'))
+    const baseline = new Date(String(item.CRHK_DDLI_TJLBBSJ).replace(/\//g, '-'))
     if (start && baseline < start) inDate = false
     if (end && baseline > end) inDate = false
-    // const inDate = (item.CRHK_DDL_YQWCSJ >= start && item.CRHK_DDL_YQWCSJ <= end) || (item.CRHK_DDR_SFWWCSJ >= start && item.CRHK_DDR_SFWWCSJ <= end)
+    // const inDate = (item.CRHK_DDLI_TJLBBSJ >= start && item.CRHK_DDLI_TJLBBSJ <= end) || (item.CRHK_DDLI_STRASJWC >= start && item.CRHK_DDLI_STRASJWC <= end)
     const matchDiscipline = allSelected || selectedDisciplines.value.includes(item.CRHK_PPR_WJLX_XL)
+    const matchStatus = allStatus || completionStatus.value.includes(item.COMPLETION_STATUS)
     const matchPhase = selectedDesignPhase.value === 'All' || item.CRHK_DDL_SJJD_PD === selectedDesignPhase.value
     const matchVersion = selectedVersion.value === 'All' || item.CRHK_DDLI_DQBB_XL === selectedVersion.value
+    // const matchStatus = completionStatus.value === 'All' || item.COMPLETION_STATUS === completionStatus.value
     const matchKeyword = !keyword || item.code.toLowerCase().includes(keyword) || item.task.toLowerCase().includes(keyword)
-    return inDate && matchDiscipline && matchPhase && matchVersion && matchKeyword
+    return inDate && matchDiscipline && matchPhase && matchVersion && matchStatus && matchKeyword
   })
 })
 
 const tableRows = computed(() => {
+  // return filteredData.value.slice(0, 100)
   return filteredData.value
-  return filteredData.value.slice(0, 120).map((item) => ({
-    CRHK_RL_JFWBH: item.CRHK_RL_JFWBH,
-    CRHK_RL_JFWMC: item.CRHK_RL_JFWMC,
-    CRHK_DDLI_DQBB_XL: item.CRHK_DDLI_DQBB_XL,
-    designPhase: item.designPhase,
-    version: item.version,
-    // CRHK_DDL_YQWCSJ: formatDate(item.CRHK_DDL_YQWCSJ),
-    // CRHK_DDR_SFWWCSJ: formatDate(item.CRHK_DDR_SFWWCSJ),
-    CRHK_DDL_YQWCSJ: item.CRHK_DDL_YQWCSJ,
-    CRHK_DDR_SFWWCSJ: item.CRHK_DDR_SFWWCSJ,
-    percent: Math.floor(Math.random() * 101),
-  }))
 })
 
 const disciplineLabel = computed(() => {
@@ -324,28 +536,29 @@ const disciplineLabel = computed(() => {
   }
   statisticsTableColumns.value = [ ...selectedDisciplines.value ]
   if (selectedDisciplines.value.length <= 3) {
-    return selectedDisciplines.value.join(', ')
+    const arr = selectedDisciplines.value.map((item) => window.i18nManager.getText(item))
+    return arr.join(', ')
   }
   return `${selectedDisciplines.value.length} selected`
 })
 
-const reviewSummary = computed(() => {
-  const groups = {}
-  const disciplines = [...new Set(filteredData.value.map((item) => item.CRHK_PPR_WJLX_XL))].sort()
-  disciplines.forEach((discipline) => {
-    const list = filteredData.value.filter((item) => item.CRHK_PPR_WJLX_XL === discipline)
-    groups[discipline] = {
-      inputCompleted: list.filter((item) => item.CRHK_DDLI_DQBB_XL === '输入清单已完成').length,
-      submitABCDE: list.filter((item) => ['A', 'B', 'C', 'D', 'E'].includes(item.CRHK_DDLI_DQBB_XL)).length,
-      submitZero: list.filter((item) => item.CRHK_DDLI_DQBB_XL === '0版本').length,
-    }
-  })
-  return { disciplines, groups }
+const completionStatusLabel = computed(() => {
+  if (completionStatus.value.includes('All')) {
+    return 'All'
+  }
+  if (completionStatus.value.length === 0) {
+    return 'None'
+  }
+  if (completionStatus.value.length <= 3) {
+    const arr = completionStatus.value.map((item) => window.i18nManager.getText(item))
+    return arr.join(', ')
+  }
+  return `${completionStatus.value.length} selected`
 })
 
 const kpi = computed(() => {
   const total = filteredData.value.length || 1
-  const spvCount = filteredData.value.filter((item) => ['0版本', 'A', 'B', 'C', 'D', 'E'].includes(item.CRHK_DDLI_DQBB_XL)).length
+  const spvCount = filteredData.value.filter((item) => ['0版本', '通过SPV审批', '通过TUV审批', '通过业主批复'].includes(item.CRHK_DDLI_DQBB_XL)).length
   const tuvCount = total
   // const ownerCount = filteredData.value.filter((item) => item.CRHK_DDLI_DQBB_XL === '通过业主批复').length
   // const total = spvCount + tuvCount + ownerCount
@@ -354,8 +567,8 @@ const kpi = computed(() => {
     spvCount,
     tuvCount,
     // ownerCount,
-    spvPct: Math.ceil((filteredData.value.filter((item) => ['0版本', 'A', 'B', 'C', 'D', 'E'].includes(item.CRHK_DDLI_DQBB_XL)).length / total) * 100),
-    tuvPct: Math.ceil((filteredData.value.filter((item) => ['通过SPV审批', '通过TUV审批', '通过业主批复'].includes(item.CRHK_DDLI_DQBB_XL)).length / total) * 100),
+    spvPct: Math.ceil((filteredData.value.filter((item) => ['0版本', '通过SPV审批', '通过TUV审批', '通过业主批复'].includes(item.CRHK_DDLI_DQBB_XL)).length / total) * 100),
+    tuvPct: Math.ceil((filteredData.value.filter((item) => ['通过业主批复'].includes(item.CRHK_DDLI_DQBB_XL)).length / total) * 100),
     // ownerPct: Math.ceil((ownerCount / total) * 100),
   }
 })
@@ -373,6 +586,21 @@ function onDisciplineChange(value, checked) {
     if (idx >= 0) next.splice(idx, 1)
   }
   selectedDisciplines.value = next.length ? next : ['All']
+}
+
+function onCompletionStatusChange(value, checked) {
+  if (value === 'All') {
+    completionStatus.value = checked ? ['All'] : []
+    return
+  }
+
+  const next = completionStatus.value.filter((item) => item !== 'All')
+  if (checked && !next.includes(value)) next.push(value)
+  if (!checked) {
+    const idx = next.indexOf(value)
+    if (idx >= 0) next.splice(idx, 1)
+  }
+  completionStatus.value = next.length ? next : ['All']
 }
 
 function renderGauge(chart, value, color, title) {
@@ -433,16 +661,50 @@ function getRemSize() {
 }
 const fontSize = getRemSize()
 
-function renderReviewChart() {
-  if (!charts.review) return
-  const disciplines = reviewSummary.value.disciplines
-  const groups = reviewSummary.value.groups
+let isActive = ref(true)
+function renderReviewChart(val, num) {
+  if(!isActive.value) {
+    return setTimeout(() => {
+      renderReviewChart(val, num);
+    }, 5000)
+  }
+  if(!charts.review) return;
+  if(workScheduleRows.value.length > 8) {
+    let startNum = 0, endNum = 0, nextNum = num
+    if((num + 1) * 8 < workScheduleRows.value.length) {
+      startNum = num * 8
+      endNum = (num + 1) * 8
+      nextNum += 1
+    } else if (num * 8 < workScheduleRows.value.length && (num + 1) * 8 >= workScheduleRows.value.length) {
+      endNum = workScheduleRows.value.length
+      startNum = endNum - 8
+      nextNum += 1
+    } else {
+      startNum = 0
+      endNum = 8
+      nextNum = 1
+    }
+    setTimeout(() => {
+      renderReviewChart(workScheduleRows.value.slice(startNum, endNum), nextNum)
+    }, 5000)
+  }
+  const disciplines = val.map(el => el.CRRC_PCA_ZYMC)
+  const groups = val.map(el => el.JHWCBL)
+  const jfwNum = val.map(el => el.SJWCBL)
 
   charts.review.setOption({
-    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-    legend: { data: ['Input list has been completed', 'Submit version A/B/C/D/E', 'Submit version 0'] },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'cross',
+        crossStyle: {
+          color: '#999'
+        },
+      }
+    },
+    legend: { data: [window.i18nManager.getText('计划完成比例'), window.i18nManager.getText('实际完成比例')] },
     grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-    xAxis: {
+    xAxis: [{
       type: 'category',
       data: disciplines,
       axisLabel: {
@@ -451,33 +713,43 @@ function renderReviewChart() {
         overflow: 'break',
         width: 130 * fontSize,
       },
-    },
+    }],
     // yAxis: { type: 'value', name: 'Total number of tasks' },
-    yAxis: { type: 'value', name: 'Total' },
+    yAxis: [
+      {
+        type: 'value',
+        name: '完成比例',
+        min: 0,
+        max: 100,
+        axisLabel: {
+          formatter: '{value} %'
+        }
+      },
+    ],
     series: [
       {
-        name: 'Input list has been completed',
+        name: window.i18nManager.getText('计划完成比例'),
         type: 'bar',
-        stack: 'total',
-        barWidth: '40%',
+        barWidth: '20%',
         itemStyle: { color: '#52c41a' },
-        data: disciplines.map((item) => groups[item].inputCompleted),
+        data: groups,
+        label: {
+          show: true,
+          formatter: '{c}%',
+          position: 'top'
+        },
       },
       {
-        name: 'Submit version A/B/C/D/E',
+        name: window.i18nManager.getText('实际完成比例'),
         type: 'bar',
-        stack: 'total',
-        barWidth: '40%',
-        itemStyle: { color: '#1890ff' },
-        data: disciplines.map((item) => groups[item].submitABCDE),
-      },
-      {
-        name: 'Submit version 0',
-        type: 'bar',
-        stack: 'total',
-        barWidth: '40%',
-        itemStyle: { color: '#ff4d4f' },
-        data: disciplines.map((item) => groups[item].submitZero),
+        barWidth: '20%',
+        itemStyle: { color: '#1976d2' },
+        data: jfwNum,
+        label: {
+          show: true,
+          formatter: '{c}%',
+          position: 'top'
+        },
       },
     ],
   })
@@ -485,15 +757,16 @@ function renderReviewChart() {
 
 function updateCharts() {
   // renderReviewChart()
-  renderGauge(charts.spv, kpi.value.spvPct, '#52c41a', 'Progress by Doc.Approval')
+  renderGauge(charts.spv, kpi.value.spvPct, '#52c41a', window.i18nManager.getText('Percentage of STSTRA Submissions'))
   // renderGauge(charts.tuv, kpi.value.tuvPct, '#1890ff')
-  renderGauge(charts.tuv, kpi.value.tuvPct, '#52c41a', 'Progress by Doc.Deliveries')
+  renderGauge(charts.tuv, kpi.value.tuvPct, '#52c41a', window.i18nManager.getText('Progress by Doc.Deliveries'))
   // renderGauge(charts.owner, kpi.value.ownerPct, '#faad14')
 }
 
 function handleDocClick(e) {
   if (!disciplineRef.value) return
   if (!disciplineRef.value.contains(e.target)) disciplineOpen.value = false
+  if (!statusRef.value.contains(e.target)) statusOpen.value = false
 }
 
 function resizeCharts() {
@@ -504,31 +777,45 @@ let FileTypeOptions = []
 const statisticsTableColumns = ref([])
 const statisticsTable = ref([])
 onMounted(async () => {
-  axios.getTableData()
-  .then(res => {
-    workScheduleRows.value = res.data.data
-  })
-  axios.getTable2Data()
-  .then(res => {
-    mockData.value = res.data.data
-  })
-  axios.getOptionsList()
-  .then(res => {
-    designPhases = res.data.data.DesignPhase
-    disciplineOptions.push(...res.data.data.FileType)
-    FileTypeOptions = res.data.data.FileType
-    statisticsTableColumns.value = [...FileTypeOptions]
-    versions.push(...res.data.data.Version)
-  })
-  await nextTick()
-  // charts.review = echarts.init(reviewChartRef.value)
+  window.addEventListener('languageChanged', updateLanguage);
+  // 初始化时钟
+  updateClock()
+  const clockInterval = setInterval(updateClock, 1000)
+  charts.review = echarts.init(reviewChartRef.value)
   charts.spv = echarts.init(gaugeSPVRef.value)
   charts.tuv = echarts.init(gaugeTUVRef.value)
+  getTableData()
+  const res2 = await axios.getTable2Data()
+  mockData.value = res2.data.data
+  const optionRes = await axios.getOptionsList()
+  designPhases = optionRes.data.data.sjjfw.DesignPhase
+  disciplineOptions.push(...optionRes.data.data.sjjfw.FileType)
+  FileTypeOptions = optionRes.data.data.sjjfw.FileType
+  statisticsTableColumns.value = [...FileTypeOptions]
+  versions.push(...optionRes.data.data.sjjfw.Version)
+  renderChart()
+  await nextTick()
   // charts.owner = echarts.init(gaugeOwnerRef.value)
   updateCharts()
   window.addEventListener('resize', resizeCharts)
   document.addEventListener('click', handleDocClick)
+  // 清理定时器
+  onUnmounted(() => clearInterval(clockInterval))
 })
+async function getTableData() {
+  const res = await axios.getTableData()
+  workScheduleRows.value = res.data.data
+  renderReviewChart(workScheduleRows.value.slice(0, 8), 1)
+}
+
+const updateLanguage = () => {
+  renderChart()
+  updateCharts()
+  renderReviewChart(workScheduleRows.value.slice(0, 8), 1)
+}
+onUnmounted(() => {
+  window.removeEventListener('languageChanged', updateLanguage);
+});
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeCharts)
@@ -539,18 +826,8 @@ onBeforeUnmount(() => {
 })
 
 watch([filteredData, kpi], () => {
-  const query = {
-    startDate: startDate.value,
-    endDate: endDate.value,
-    version: selectedVersion.value === 'All' ? '' : selectedVersion.value,
-    designPhase: selectedDesignPhase.value === 'All' ? '' : selectedDesignPhase.value,
-    fileType: selectedDisciplines.value.includes('All') ? '' : selectedDisciplines.value.join(','),
-  }
-  axios.getTable3Data(query)
-  .then(res => {
-    statisticsTable.value = selectedVersion.value === 'All' ? res.data.data : res.data.data.filter(item => [selectedVersion.value, '总计'].includes(item.FILE_VERSION))
-  })
   updateCharts()
+  renderChart()
 })
 </script>
 
@@ -595,6 +872,7 @@ watch([filteredData, kpi], () => {
   }
 
   .sidebar {
+    position: relative;
     width: 280px;
     gap: 20px;
     overflow-y: auto;
@@ -668,7 +946,7 @@ watch([filteredData, kpi], () => {
   }
 
   .top-charts {
-    height: 300px;
+    height: 400px;
   }
 
   .chart-card {
@@ -765,7 +1043,7 @@ watch([filteredData, kpi], () => {
   }
 
   .bottom-section {
-    flex: 1;
+    flex: 2;
     min-height: 0;
     display: flex;
   }
@@ -853,6 +1131,43 @@ watch([filteredData, kpi], () => {
     display: flex;
     align-items: center;
     gap: 10px;
+  }
+
+  .right-col {
+    .chart-card {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 12px;
+    }
+  }
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 4px;
+
+    &.delay-unfinished {
+      background: #dc3545;
+    }
+
+    &.completed {
+      background: #28a745;
+    }
+
+    &.unfinished {
+      background: #007bff;
+    }
+
+    &.delay-completed {
+      background: #FFA500;
+    }
+  }
+  .deliverables-chart {
+    margin-top: 10px;
+    height: 100%;
+    width: 100%;
   }
 }
 </style>
