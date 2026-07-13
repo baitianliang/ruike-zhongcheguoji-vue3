@@ -33,7 +33,7 @@
 
     <!-- Top Stats -->
     <section class="stats-grid animate-in delay-1">
-      <div class="card">
+      <div class="card" style="cursor: pointer" @click="puPush('project_tasks')">
         <div class="stat-header">
           <div class="stat-label" v-i18n="'task_messages'">任务消息</div>
           <div class="stat-icon">
@@ -128,7 +128,7 @@
                 :class="{ 'row-blink': true }"
               >
                 <td style="color: var(--text-tertiary)">{{ item.id }}</td>
-                <td>
+                <td style="cursor: pointer" @click="puPush({'设计交付物清单报工': 'uxddr', '输入清单报工': 'uxilowr'}[item.RWMC1])">
                   <div style="font-weight: 500;" class="text-red">{{ item.RWMC1 }}</div>
                   <div style="font-size: 11px; color: var(--text-secondary)">{{ item.RWMC2 }}</div>
                 </td>
@@ -617,6 +617,10 @@ onMounted(() => {
     })
   })
 })
+
+const puPush = (path) => {
+  top?.setNavigationKey(path)
+}
 
 function initFun() {
   // 初始化主题

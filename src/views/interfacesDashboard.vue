@@ -10,9 +10,12 @@
       </div>
     </header>
 
+    <div class="header_title header_title_blue">
+      <span v-i18n="'Civil Construction Interface Status'">Civil Construction Interface Status</span>
+    </div>
     <div class="interfaces-top-grid animate-in delay-1">
       <section class="card interfaces-card">
-        <div class="interfaces-card-title" v-i18n="'Interfaces by Status'">Interfaces by Status</div>
+        <div class="interfaces-card-title" v-i18n="'Distribution Of Civil Engineering Interface Status'">Distribution Of Civil Engineering Interface Status</div>
         <div class="interfaces-chart-container">
           <div class="pie-chart-wrapper">
             <div ref="statusPieEl" class="echart-box"></div>
@@ -34,7 +37,7 @@
       </section>
 
       <section class="card interfaces-card">
-        <div class="interfaces-card-title" v-i18n="'Interfaces by Status per Week'">Interfaces by Status per Week</div>
+        <div class="interfaces-card-title" v-i18n="'Civil Engineering Interface Status Cycle Distribution'">Civil Engineering Interface Status Cycle Distribution</div>
         <div class="line-chart-wrapper">
           <div ref="statusLineEl" class="echart-box"></div>
         </div>
@@ -159,6 +162,229 @@
         </div>
       </section> -->
     </div>
+    
+    <div class="header_title header_title_green">
+      <span v-i18n="'Intersystem Interface Status'">Intersystem Interface Status</span>
+    </div>
+    <div class="interfaces-top-grid animate-in delay-1">
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Inter-system Interface State Distribution'">Inter-system Interface State Distribution</div>
+        <div class="interfaces-chart-container">
+          <div class="pie-chart-wrapper">
+            <div ref="statusPieEl2" class="echart-box"></div>
+          </div>
+          <div class="legend">
+            <div
+              v-for="item in statusLegend"
+              :key="item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'System Interface Status Periodic Distribution'">System Interface Status Periodic Distribution</div>
+        <div class="line-chart-wrapper">
+          <div ref="statusLineEl2" class="echart-box"></div>
+        </div>
+      </section>
+    </div>
+
+    <div class="interfaces-bottom-grid animate-in delay-2">
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by TEL & SIG'">Interfaces by TEL & SIG</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="typePieEl2" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in typeLegend"
+              :key="'type-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by TEL & ENE'">Interfaces by TEL & ENE</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="leadPieEl2" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in leadLegend"
+              :key="'lead-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by TEL & SCAP'">Interfaces by TEL & SCAP</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="participatingPieEl2" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in participatingLegend"
+              :key="'part-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by ENE & SIG'">Interfaces by ENE & SIG</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="extraPie1El2" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in extra1Legend"
+              :key="'extra1-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by ENE & OCS'">Interfaces by ENE & OCS</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="extraPie2El2" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in extra2Legend"
+              :key="'extra2-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by RSK & SIG/TEL'">Interfaces by RSK & SIG/TEL</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="extraPieEl3" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in extra2Legend"
+              :key="'extra2-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by CCRSK & ENE/OCSO'">Interfaces by CCRSK & ENE/OCSO</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="extraPie1El3" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in extra2Legend"
+              :key="'extra2-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card interfaces-card">
+        <div class="interfaces-card-title" v-i18n="'Interfaces by DEPOT & SIG/TEL/OCS'">Interfaces by DEPOT & SIG/TEL/OCS</div>
+        <div class="interfaces-chart-container compact">
+          <div class="bottom-chart-wrapper">
+            <div ref="extraPie2El3" class="echart-box"></div>
+          </div>
+          <div class="legend compact">
+            <div
+              v-for="item in extra2Legend"
+              :key="'extra2-' + item.label"
+              class="legend-item"
+              :class="{ total: item.isTotal }"
+            >
+              <div class="legend-color" :style="{ backgroundColor: item.color }"></div>
+              <span class="legend-text" v-i18n="item.label">{{ item.label }}</span>
+              <!-- <span class="legend-value">{{ item.value }}</span>
+              <span class="legend-percent">{{ item.percent }}</span> -->
+              <span class="legend-value">0</span>
+              <span class="legend-percent">0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -179,6 +405,17 @@ const extraPie1El = ref(null)
 const extraPie2El = ref(null)
 const designPhaseBarEl = ref(null)
 
+const statusPieEl2 = ref(null)
+const statusLineEl2 = ref(null)
+const typePieEl2 = ref(null)
+const leadPieEl2 = ref(null)
+const participatingPieEl2 = ref(null)
+const extraPie1El2 = ref(null)
+const extraPie2El2 = ref(null)
+const extraPieEl3 = ref(null)
+const extraPie1El3 = ref(null)
+const extraPie2El3 = ref(null)
+
 const statusLabels = ['Creating', 'System release', 'System update', 'Civil handover', 'Processing', 'Closed', 'Cancel']
 const statusColors = ['#6c757d', '#1e88e5', '#00acc1', '#fb8c00', '#8e24aa', '#43a047', '#e53935']
 let statusData = ref([])
@@ -193,6 +430,15 @@ const statusLineSeries = ref([
   { name: 'Processing', color: '#8e24aa', data: [] },
   { name: 'Closed', color: '#43a047', data: [] },
   { name: 'Cancel', color: '#e53935', data: [] },
+])
+const statusLineSeries2 = ref([
+  { name: 'Creating', color: '#6c757d', data: [0,0,0,0,0,0,0] },
+  { name: 'System release', color: '#1e88e5', data: [0,0,0,0,0,0,0] },
+  { name: 'System update', color: '#00acc1', data: [0,0,0,0,0,0,0] },
+  { name: 'Civil handover', color: '#fb8c00', data: [0,0,0,0,0,0,0] },
+  { name: 'Processing', color: '#8e24aa', data: [0,0,0,0,0,0,0] },
+  { name: 'Closed', color: '#43a047', data: [0,0,0,0,0,0,0] },
+  { name: 'Cancel', color: '#e53935', data: [0,0,0,0,0,0,0] },
 ])
 
 let typeData = ref([])
@@ -308,6 +554,39 @@ function initLineChart(chart) {
       splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.25)' } },
     },
     series: statusLineSeries.value.map((s, i) => ({
+      name: window.i18nManager.getText(s.name),
+      type: 'line',
+      data: s.data,
+      smooth: true,
+      showSymbol: true,
+      symbolSize: 4,
+      lineStyle: { color: baseColors[i], width: 2 },
+      itemStyle: { color: baseColors[i] },
+    })),
+  })
+}
+function initLineChart2(chart) {
+  chart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: { trigger: 'axis' },
+    legend: {
+      top: 8,
+      type: 'scroll',
+      textStyle: { color: '#64748b', fontSize: 11 },
+    },
+    grid: { left: 48, right: 24, top: 40, bottom: 38 },
+    xAxis: {
+      type: 'category',
+      data: weeks.value,
+      axisLabel: { fontSize: 10, color: '#64748b' },
+      axisLine: { lineStyle: { color: 'rgba(100, 116, 139, 0.3)' } },
+    },
+    yAxis: {
+      type: 'value',
+      axisLabel: { fontSize: 10, color: '#64748b' },
+      splitLine: { lineStyle: { color: 'rgba(148, 163, 184, 0.25)' } },
+    },
+    series: statusLineSeries2.value.map((s, i) => ({
       name: window.i18nManager.getText(s.name),
       type: 'line',
       data: s.data,
@@ -499,6 +778,16 @@ function renderChart() {
     { el: extraPie1El.value, init: (c) => initPieChart(c, statusLabels, extra1Data.value, baseColors) },
     { el: extraPie2El.value, init: (c) => initPieChart(c, statusLabels, extra2Data.value, baseColors) },
     // { el: designPhaseBarEl.value, init: initDesignPhaseBar },
+    { el: statusPieEl2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: statusLineEl2.value, init: initLineChart2 },
+    { el: typePieEl2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: leadPieEl2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: participatingPieEl2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: extraPie1El2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: extraPie2El2.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: extraPieEl3.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: extraPie1El3.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
+    { el: extraPie2El3.value, init: (c) => initPieChart(c, statusLabels, [0,0,0,0,0,0,0], baseColors) },
   ]
 
   chartsToInit.forEach(({ el, init }) => {
@@ -521,6 +810,26 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+header {
+  border-bottom: 0px;
+}
+
+.header_title {
+  width: 100%;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 10px 10px 0px 0px;
+}
+.header_title_blue {
+  background: linear-gradient(90deg, #4290F8, #60A4FB, #B4BCFC);
+}
+.header_title_green {
+  background: linear-gradient(90deg, #36C880, #54D896, #A0E8BC);
+}
+
 .interfaces-dashboard{
   padding: 20px;
 }

@@ -509,11 +509,16 @@ const renderChart = () => {
     ]), shadowColor: 'rgba(255, 159, 67, 0.6)', borderColor: '#ffb86c'},
   };
 
+  const dataList = tasks.value.filter(task => {
+    if (filters.selectedDesignPhase !== 'All' && task.CRHK_DDL_SJJD_PD !== filters.selectedDesignPhase) return false
+    return true
+  })
+
   // 2. 为每个 discipline 计算各状态的数量
   const rawData = labels.map((sp) => {
     const statusCounts = {};
     Object.keys(statusMap).forEach((label) => {
-      statusCounts[label] = filteredTasks.value.filter(
+      statusCounts[label] = dataList.filter(
         (item) => window.i18nManager.getText(item.CRHK_PPR_WJLX_XL) === sp && item.COMPLETION_STATUS === label
       ).length;
     });

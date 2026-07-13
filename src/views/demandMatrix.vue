@@ -91,7 +91,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in filteredDeliverables" :key="row.CRHK_IL_QDBH1">
+              <tr v-for="row in tableData" :key="row.CRHK_IL_QDBH1">
                 <td>{{ row.CRHK_DM_SXQBH }}</td>
                 <td>{{ row.CRHK_DM_TUVXQBH }}</td>
                 <td v-i18n="row.CRHK_DDL_SJJD_PD === '单线基本设计' ? '单线基本设计2' : row.CRHK_DDL_SJJD_PD">{{ row.CRHK_DDL_SJJD_PD }}</td>
@@ -129,15 +129,19 @@ let chart = null
 const deliverablesData = ref([])
 
 const filteredDeliverables = computed(() => {
-  const start = startDate.value ? new Date(startDate.value) : null
-  const end = endDate.value ? new Date(endDate.value) : null
+  // const start = startDate.value ? new Date(startDate.value) : null
+  // const end = endDate.value ? new Date(endDate.value) : null
 
   return deliverablesData.value.filter((item) => {
-    if (specialty.value !== 'all' && item.CRHK_DM_ZY !== specialty.value) return false
     if (designPhase.value !== 'all' && item.CRHK_DDL_SJJD_PD !== designPhase.value) return false
+    if (specialty.value !== 'all' && item.CRHK_DM_ZY !== specialty.value) return false
     if (satisfied.value !== 'all' && item.CRHK_DM_MZYQ !== satisfied.value) return false
     return true
   })
+})
+
+const tableData = computed(() => {
+  return filteredDeliverables.value.slice(0, 300)
 })
 
 function updateClock() {
@@ -181,6 +185,11 @@ function renderChart() {
     Satisfy: { key: '是', color: '#28a745' },
     Unsatisfied: { key: '否', color: '#dc3545' },
   }
+  console.log(deliverablesData.value)
+  const dataList = deliverablesData.value.filter((item) => {
+    if (designPhase.value !== 'all' && item.CRHK_DDL_SJJD_PD !== designPhase.value) return false
+    return true
+  })
 
   const datasets = Object.keys(statusMap).map((label) => {
     const cfg = statusMap[label]
@@ -202,7 +211,7 @@ function renderChart() {
         },
       },
       data: specialties.map((sp) => {
-        return filteredDeliverables.value.filter((item) => item.CRHK_DM_ZY === sp && item.CRHK_DM_MZYQ === cfg.key).length
+        return dataList.filter((item) => item.CRHK_DM_ZY === sp && item.CRHK_DM_MZYQ === cfg.key).length
       }),
     }
   })

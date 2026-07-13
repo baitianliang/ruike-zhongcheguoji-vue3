@@ -354,11 +354,25 @@ function renderChart() {
     '延期已完成': { key: window.i18nManager.getText('Delayed But Completed'), color: '#FFA500' },
   };
 
+  const start = startDate.value ? new Date(startDate.value) : null
+  const end = endDate.value ? new Date(endDate.value) : null
+  const keyword = searchText.value.trim().toLowerCase()
+  const dataList = mockData.value.filter((item) => {
+    let inDate = true
+    const baseline = new Date(String(item.CRHK_DDLI_TJLBBSJ).replace(/\//g, '-'))
+    if (start && baseline < start) inDate = false
+    if (end && baseline > end) inDate = false
+    // const inDate = (item.CRHK_DDLI_TJLBBSJ >= start && item.CRHK_DDLI_TJLBBSJ <= end) || (item.CRHK_DDLI_STRASJWC >= start && item.CRHK_DDLI_STRASJWC <= end)
+    const matchPhase = selectedDesignPhase.value === 'All' || item.CRHK_DDL_SJJD_PD === selectedDesignPhase.value
+    const matchKeyword = !keyword || item.code.toLowerCase().includes(keyword) || item.task.toLowerCase().includes(keyword)
+    return inDate && matchPhase && matchKeyword
+  })
+
   // 2. 为每个 discipline 计算各状态的数量
   const rawData = labels.map((sp) => {
     const statusCounts = {};
     Object.keys(statusMap).forEach((label) => {
-      statusCounts[label] = filteredData.value.filter(
+      statusCounts[label] = dataList.filter(
         (item) => window.i18nManager.getText(item.CRHK_PPR_WJLX_XL) === sp && item.COMPLETION_STATUS === label
       ).length;
     });
@@ -521,7 +535,7 @@ const filteredData = computed(() => {
 })
 
 const tableRows = computed(() => {
-  // return filteredData.value.slice(0, 100)
+  return filteredData.value.slice(0, 100)
   return filteredData.value
 })
 

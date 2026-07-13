@@ -39,7 +39,7 @@
 
     <!-- Top Stats -->
     <section class="stats-grid animate-in delay-1">
-      <div class="card">
+      <div class="card" style="cursor: pointer" @click="puPush('project_tasks')">
         <div class="stat-header">
           <div class="stat-label" v-i18n="'task_messages'">任务消息</div>
           <div class="stat-icon">
@@ -394,7 +394,7 @@
           <tbody>
             <tr v-for="(item, index) in paginatedOverdueTasks" :key="index">
               <td style="color: #94a3b8">{{ index + 1 }}</td>
-              <td>
+              <td style="cursor: pointer" @click="puPush({'设计交付物清单报工': 'uxddr', '输入清单报工': 'uxilowr'}[item.RWMC1])">
                 <div style="font-weight: 500; color: #dc3545">{{ item.RWMC1 }}</div>
                 <div style="font-size: 11px; color: #cbd5e1">{{ item.RWMC2 }}</div>
               </td>
@@ -652,6 +652,10 @@ function init() {
     clearInterval(clockInterval)
     window.removeEventListener('languageChanged', () => {})
   })
+}
+
+const puPush = (path) => {
+  top?.setNavigationKey(path)
 }
 
 const allItems = ref([])

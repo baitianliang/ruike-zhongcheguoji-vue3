@@ -224,12 +224,21 @@ function renderChart() {
     "Under Discussion": { key: 'Under Discussion', color: '#ffc60a' },
     'Delayed': { key: 'Delayed', color: '#dc3545' },
   }
+  const start = startDate.value ? new Date(startDate.value) : null
+  const end = endDate.value ? new Date(endDate.value) : null
+  const dataList = deliverablesData.value.filter((item) => {
+      if (designPhase.value !== 'all' && item.CRHK_DDL_SJJD_PD !== designPhase.value) return false
 
+      const baseline = new Date(String(item.CRHK_LCI_YQWCSJ).replace(/\//g, '-'))
+      if (start && baseline < start) return false
+      if (end && baseline > end) return false
+      return true
+  })
   // 1. 预计算每个 specialty 的各状态数量
   const rawData = specialties.map((sp) => {
     const statusCounts = {};
     Object.keys(statusMap).forEach((label) => {
-      statusCounts[label] = filteredDeliverables.value.filter(
+      statusCounts[label] = dataList.filter(
         (item) => item.CRHK_IL_ZY === sp && item.COMPLETION_STATUS === statusMap[label].key
       ).length;
     });

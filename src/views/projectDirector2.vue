@@ -29,7 +29,7 @@
 
       <!-- 统计卡片 -->
       <div class="stats-bar">
-        <div class="stat-card">
+        <div class="stat-card" style="cursor: pointer" @click="puPush('project_tasks')">
           <div class="stat-left">
             <div class="stat-label">{{ t('task_messages') }}</div>
             <div class="stat-value red" data-count="0">{{ dashboardData.ZSL || 0 }}</div>
@@ -295,7 +295,7 @@
           <tbody>
             <tr v-for="(item, index) in overdueTasks" :key="index">
               <td style="color: #94a3b8">{{ index + 1 }}</td>
-              <td>
+              <td style="cursor: pointer" @click="puPush({'设计交付物清单报工': 'uxddr', '输入清单报工': 'uxilowr'}[item.RWMC1])">
                 <div style="font-weight: 500; color: #dc3545">{{ item.RWMC1 }}</div>
                 <div style="font-size: 11px; color: #cbd5e1">{{ item.RWMC2 }}</div>
               </td>
@@ -869,6 +869,10 @@ onMounted(() => {
   clockInterval = setInterval(updateClock, 1000)
   initCanvas()
 })
+
+const puPush = (path) => {
+  top?.setNavigationKey(path)
+}
 
 onUnmounted(() => {
   if (clockInterval) clearInterval(clockInterval)
